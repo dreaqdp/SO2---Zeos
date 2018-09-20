@@ -1,3 +1,4 @@
+#include<asm.h>
 ENTRY(add2)
 push %ebp
 mov %esp, %ebp
