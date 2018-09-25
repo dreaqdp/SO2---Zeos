@@ -74,6 +74,7 @@ void setTrapHandler(int vector, void (*handler)(), int maxAccessibleFromPL)
 }
 
 void keyboard_handler();
+void system_call_handler();
 
 void setIdt()
 {
@@ -85,10 +86,12 @@ void setIdt()
 
   /* ADD INITIALIZATION CODE FOR INTERRUPT VECTOR */
   setInterruptHandler(33,keyboard_handler,3);
+  setTrapHandler(0x80,system_call_handler,3);
 
   set_idt_reg(&idtR);
 }
 
+//int sys_write_wrapper(int fd, char* buffer,int size);
 
 void keyboard_routine(){
 	//printk("hola");
@@ -98,10 +101,9 @@ void keyboard_routine(){
 	if ((llegit&0b10000000)==0){ //comprovem que es un "make"
 		unsigned int n = sizeof(char_map) / sizeof(char_map[0]);
 		if (llegit<n) result = char_map[llegit];
-		printc_xy(0,0,result);
-		
+		printc_xy(0,0,result);		
 	}
-	
-	
 }
+
+
 
