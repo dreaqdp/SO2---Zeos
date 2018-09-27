@@ -43,3 +43,19 @@ int strlen(char *a)
   return i;
 }
 
+void perror(void){
+	char err_buffer[3]; //3 digits
+	itoa(errno,err_buffer);
+	write(1,err_buffer,3);
+}
+
+int sys_write_wrapper(int fd, char* buffer, int size);
+int write(int fd, char* buffer, int size) {
+	return sys_write_wrapper(fd, buffer, size);
+}
+
+int sys_gettime_wrapper ();
+int gettime () {
+	return sys_gettime_wrapper();
+}
+

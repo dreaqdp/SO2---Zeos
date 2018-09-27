@@ -19,6 +19,8 @@ unsigned int *p_sys_size = (unsigned int *) KERNEL_START;
 unsigned int *p_usr_size = (unsigned int *) KERNEL_START+1;
 unsigned int *p_rdtr = (unsigned int *) KERNEL_START+2;
 
+unsigned int zeos_ticks;
+
 /************************/
 /** Auxiliar functions **/
 /************************/
@@ -81,7 +83,7 @@ int __attribute__((__section__(".text.main")))
   set_seg_regs(__KERNEL_DS, __KERNEL_DS, (DWord) &protected_tasks[5]);
 
   /*** DO *NOT* ADD ANY CODE IN THIS ROUTINE BEFORE THIS POINT ***/
-
+  
   printk("Kernel Loaded!    ");
 
 
@@ -108,7 +110,7 @@ int __attribute__((__section__(".text.main")))
   /* Move user code/data now (after the page table initialization) */
   copy_data((void *) KERNEL_START + *p_sys_size, usr_main, *p_usr_size);
 
-
+  zeos_ticks = 0;
   printk("Entering user mode...");
 
   enable_int();

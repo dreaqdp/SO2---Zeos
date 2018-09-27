@@ -15,8 +15,11 @@
 
 #include <errno.h>
 
+
 #define LECTURA 0
 #define ESCRIPTURA 1
+
+extern unsigned int zeos_ticks;
 
 int check_fd(int fd, int permissions)
 {
@@ -55,28 +58,33 @@ int sys_write_console (char *buffer, int size) {
 	}
 	return x;
 }*/
-
+int size_block = 4;
 int sys_write(int fd, char * buffer, int size) {
 	
+	
+	
 	int error_fd = check_fd(fd, ESCRIPTURA);
-	if (error_fd < 0) return error_fd;
-	if (buffer == NULL) return EFAULT; //random value
-	if (size < 0) return EINVAL;  //random value
-	char buffer_kernel[16];
-	int i,curr_size=16;
-	for (i=0; i<size; i+=16){
-		if(size-i<16) curr_size=size-i;
+	if (error_fd < 0) return -error_fd;
+	if (buffer == NULL) return EFAULT;
+	if (size < 0) return EINVAL;
+	int i,curr_size=size_block;
+	for (i=0; i<size; i+=size_block){
+		char buffer_kernel[size_block];
+		if(size-i<size_block) curr_size=size-i;
 		int error_copy = copy_from_user(buffer+i, buffer_kernel, curr_size);
 		if (error_copy < 0) return -error_copy;
 		int ret_wconsole = -1;
 	    if (fd == 1) {
-			ret_wconsole = sys_write_console (buffer_kernel, size);
+			ret_wconsole = sys_write_console (buffer_kernel, curr_size);
 			if (ret_wconsole < 0) return ret_wconsole;
 		}
 	}
 	return 0;
 }
 
+int sys_gettime () {
+	return zeos_ticks;
+}
 
 
 

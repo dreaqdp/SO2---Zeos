@@ -75,12 +75,19 @@
       outb %al, $0x20;
 
 ENTRY(keyboard_handler)	
-	
 	SAVE_ALL 
 	EOI
 	call keyboard_routine
 	RESTORE_ALL
 	iret
+	
+ENTRY(clk_handler)	
+	SAVE_ALL 
+	EOI
+	call clk_routine
+	RESTORE_ALL
+	iret
+
 
 #ENTRY(system_call_handler)
 #	SAVE_ALL
