@@ -22,17 +22,53 @@
  movl $0x2B, %edx; movl %edx, %es; movl %edx, %ds; pop %ebx; pop %ecx; pop %edx; pop %esi; pop %edi; pop %ebp; pop %eax; pop %ds; pop %es; pop %fs; pop %gs
  iret
 
+#.globl system_call_handler; .type system_call_handler, @function; .align 0; system_call_handler:
+ # pushl %gs; pushl %fs; pushl %es; pushl %ds; pushl %eax; pushl %ebp; pushl %edi; pushl %esi; pushl %edx; pushl %ecx; pushl %ebx; movl $0x18, %edx; movl %edx, %ds; movl %edx, %es
+ # cmpl $0, %EAX
+# jl err
+# cmpl $MAX_SYSCALL, %EAX
+# jg err
+# call *sys_call_table(, %EAX, 0x04)
+# jmp fin
+#err:
+# movl $-38, %EAX
+#fin:
+# movl %EAX, 0x18(%esp)
+# movl $0x2B, %edx; movl %edx, %es; movl %edx, %ds; pop %ebx; pop %ecx; pop %edx; pop %esi; pop %edi; pop %ebp; pop %eax; pop %ds; pop %es; pop %fs; pop %gs
+ # iret
+
+
 .globl system_call_handler; .type system_call_handler, @function; .align 0; system_call_handler:
+ push $0x2B #stack segment
+ push %EBP #stack adress
+ pushfl
+ push $0x23 #code segment
+ push 4(%EBP) #code adress
  pushl %gs; pushl %fs; pushl %es; pushl %ds; pushl %eax; pushl %ebp; pushl %edi; pushl %esi; pushl %edx; pushl %ecx; pushl %ebx; movl $0x18, %edx; movl %edx, %ds; movl %edx, %es
  cmpl $0, %EAX
- jl err
+ jl sysenter_err
  cmpl $MAX_SYSCALL, %EAX
- jg err
+ jg sysenter_err
  call *sys_call_table(, %EAX, 0x04)
- jmp fin
- err:
+ jmp sysenter_fin
+sysenter_err:
  movl $-38, %EAX
- fin:
+sysenter_fin:
  movl %EAX, 0x18(%esp)
  movl $0x2B, %edx; movl %edx, %es; movl %edx, %ds; pop %ebx; pop %ecx; pop %edx; pop %esi; pop %edi; pop %ebp; pop %eax; pop %ds; pop %es; pop %fs; pop %gs
- iret
+ movl (%ESP), %EDX #code address (return adress)
+ movl 12(%ESP), %ECX #stack address
+ sti
+ sysexit
+
+
+.globl writeMSR; .type writeMSR, @function; .align 0; writeMSR:
+ push %ebp
+ mov %esp,%ebp
+    movl 8(%ebp), %ecx #identificador del msr register
+    movl $0,%edx #part alta del valor (no tindrem mai part alta, treballem en 32)
+    movl 12(%ebp),%eax #part baixa del valor
+ wrmsr
+ movl %ebp,%esp
+ pop %ebp
+ ret

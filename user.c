@@ -9,6 +9,14 @@ int add(int par1, int par2){
 	return par1+par2;
 }
 
+extern int errno;
+
+void perror(void){
+	char err_buffer[4];
+	itoa(errno,err_buffer);
+	int err = sys_write_wrapper(1,err_buffer,4);
+}
+
 long inner(long n)
 {
 	int i;
@@ -39,12 +47,16 @@ int __attribute__ ((__section__(".text.main")))
 	acum = 0;
 	acum = outer(count);*/
 	
-	char test_buffer[10] = {'h','o','l','a'};
-	int err = sys_write_wrapper(1,test_buffer,4);
-	
-	char temp[100];
+	char test_buffer[4] = {'h','o','l','a'};
+	int err = sys_write_wrapper(-1,test_buffer,4);
+	if(err<0) {
+		err = -err;
+		perror();
+	}
+	char temp[10];
 	itoa(err,temp);
-	sys_write_wrapper(1,temp,100);
+	sys_write_wrapper(1,temp,10);
+	
 	
 	
 	while(1);

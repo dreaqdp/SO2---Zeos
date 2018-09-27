@@ -82,20 +82,53 @@ ENTRY(keyboard_handler)
 	RESTORE_ALL
 	iret
 
+#ENTRY(system_call_handler)
+#	SAVE_ALL
+#	cmpl $0, %EAX
+#	jl err
+#	cmpl $MAX_SYSCALL, %EAX
+#	jg err
+#	call *sys_call_table(, %EAX, 0x04)
+#	jmp fin
+#err:
+#	movl $-38, %EAX
+#fin:
+#	movl %EAX, 0x18(%esp)
+#	RESTORE_ALL
+#	iret
+
+
 ENTRY(system_call_handler)
+	push $__USER_DS  #stack segment
+	push %EBP #stack adress
+	pushfl
+	push $__USER_CS  #code segment
+	push 4(%EBP)   #code adress
 	SAVE_ALL
 	cmpl $0, %EAX
-	jl err
+	jl sysenter_err
 	cmpl $MAX_SYSCALL, %EAX
-	jg err
+	jg sysenter_err
 	call *sys_call_table(, %EAX, 0x04)
-	jmp fin
- err:
+	jmp sysenter_fin
+sysenter_err:
 	movl $-38, %EAX
- fin:
+sysenter_fin:
 	movl %EAX, 0x18(%esp)
 	RESTORE_ALL
-	iret
+	movl (%ESP), %EDX #code address (return adress)
+	movl 12(%ESP), %ECX #stack address
+	sti
+	sysexit
 
 
-
+ENTRY(writeMSR)
+	push %ebp
+	mov %esp,%ebp
+    movl 8(%ebp), %ecx #identificador del msr register
+    movl $0,%edx #part alta del valor (no tindrem mai part alta, treballem en 32)
+    movl 12(%ebp),%eax #part baixa del valor
+	wrmsr
+	movl %ebp,%esp
+	pop %ebp
+	ret
