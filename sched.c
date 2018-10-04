@@ -59,9 +59,19 @@ void cpu_idle(void)
 	}
 }
 
+extern struct list_head freequeue;
+struct task_struct * idle_task; 
+
 void init_idle (void)
 {
-
+	struct task_struct* available = list_head_to_task_struct(list_first(&freequeue));
+	available->PID = 0;
+	allocate_DIR(available);
+	idle_task = avialable;
+	available->kernel_esp = available+KERNEL_STACK_SIZE-1;
+	(*(available->kernel_esp)) = &cpu_idle();
+	available->kernel_esp = (available->kernel_esp)-1; // ei
+	(*(available->kernel_esp)) = 0; //set ebp=0 a la stack
 }
 
 void init_task1(void)

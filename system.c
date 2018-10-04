@@ -67,6 +67,23 @@ void setMSR(){
 /*
  *   Main entry point to ZEOS Operating System
  */
+extern union task_union *task; //pointer to task[1] (0 is protected)
+ 
+struct list_head freequeue; 
+ 
+void init_freequeue(){
+	 INIT_LIST_HEAD( &freequeue);
+	 int i;
+	 for(i=0;i<NR_TASKS;++i){
+		task[i].task.PID=i;
+		list_add(&(task[i].task.list), &freequeue);
+	 }
+}
+struct list_head readyqueue; 
+void init_readyqueue(){
+	INIT_LIST_HEAD(&readyqueue);
+}
+ 
  
 
 int __attribute__((__section__(".text.main")))
@@ -94,10 +111,15 @@ int __attribute__((__section__(".text.main")))
   setMSR();
   /* Initialize Memory */
   init_mm();
+  
 
 /* Initialize an address space to be used for the monoprocess version of ZeOS */
 
   monoprocess_init_addr_space(); /* TO BE DELETED WHEN ADDED THE PROCESS MANAGEMENT CODE TO BECOME MULTIPROCESS */
+
+  /* process queues */
+  init_freequeue();
+  init_readyqueue();
 
   /* Initialize Scheduling */
   init_sched();
