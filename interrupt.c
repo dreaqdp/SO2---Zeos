@@ -99,14 +99,30 @@ void setIdt()
 
 //int sys_write_wrapper(int fd, char* buffer,int size);
 
+extern struct task_struct * idle_task;
+extern struct task_struct * task1; //si no la utilitzem no fer task1 global
+
+
+char jeje = 0;
 void keyboard_routine(){
+	if(jeje){
+		 task_switch(task1);
+		 jeje=0;
+	 }
+	else {
+		task_switch(idle_task);
+		printk("jajajaja");
+		int i; for(i=0;i<10000000000000;++i);
+		jeje=1;
+	}
+	/*
 	Byte llegit = inb(0x60);
 	char result = 'C';
 	if ((llegit&0b10000000)==0){ //comprovem que es un "make"
 		unsigned int n = sizeof(char_map) / sizeof(char_map[0]);
 		if (llegit<n) result = char_map[llegit];
 		printc_xy(0,0,result);		
-	}
+	}*/
 }
 void clk_routine() {
 	zeos_ticks++;

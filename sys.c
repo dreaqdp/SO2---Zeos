@@ -15,6 +15,8 @@
 
 #include <errno.h>
 
+#include <types.h>
+
 
 #define LECTURA 0
 #define ESCRIPTURA 1
@@ -85,6 +87,11 @@ int sys_write(int fd, char * buffer, int size) {
 int sys_gettime () {
 	return zeos_ticks;
 }
+/*
+extern TSS tss;
+int sys_getpid(){
+	return (*(tss.esp0&4096));
+}*/
 
 
 

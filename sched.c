@@ -15,12 +15,12 @@ union task_union protected_tasks[NR_TASKS+2]
 
 union task_union *task = &protected_tasks[1]; /* == union task_union task[NR_TASKS] */
 
-#if 0
+//#if 0
 struct task_struct *list_head_to_task_struct(struct list_head *l)
 {
   return list_entry( l, struct task_struct, list);
 }
-#endif
+//#endif
 
 extern struct list_head blocked;
 
@@ -55,27 +55,37 @@ void cpu_idle(void)
 
 	while(1)
 	{
+		printk("maincrah");
 	;
 	}
 }
 
 extern struct list_head freequeue;
-struct task_struct * idle_task; 
-
+struct task_struct * idle_task;
+struct task_struct * task1; //si no la utilitzem no fer task1 global
 void init_idle (void)
 {
-	struct task_struct* available = list_head_to_task_struct(list_first(&freequeue));
-	available->PID = 0;
-	allocate_DIR(available);
-	idle_task = avialable;
-	available->kernel_esp = available+KERNEL_STACK_SIZE-1;
-	(*(available->kernel_esp)) = &cpu_idle();
-	available->kernel_esp = (available->kernel_esp)-1; // ei
-	(*(available->kernel_esp)) = 0; //set ebp=0 a la stack
+	idle_task = list_head_to_task_struct(list_first(&freequeue));
+	list_del(list_first(&freequeue));
+	idle_task->PID = 0;
+	allocate_DIR(idle_task);
+	idle_task->kernel_esp = (unsigned int *)(idle_task+KERNEL_STACK_SIZE-1);
+	(*(idle_task->kernel_esp)) = &cpu_idle;
+	idle_task->kernel_esp = (idle_task->kernel_esp)-1; // ei
+	(*(idle_task->kernel_esp)) = 0; //set ebp=0 a la stack
 }
-
+void writeMSR(int msr_id, int msr_value);
 void init_task1(void)
 {
+	task1 = list_head_to_task_struct(list_first(&freequeue));
+	list_del(list_first(&freequeue));
+	task1->PID = 1;
+	allocate_DIR(task1);
+	set_user_pages(task1);
+	tss.esp0 = (DWord) idle_task+KERNEL_STACK_SIZE-1;
+	writeMSR(0x175,(int)tss.esp0);
+	set_cr3(task1->dir_pages_baseAddr);
+	
 }
 
 

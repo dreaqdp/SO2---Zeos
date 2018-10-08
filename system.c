@@ -100,7 +100,6 @@ int __attribute__((__section__(".text.main")))
   set_seg_regs(__KERNEL_DS, __KERNEL_DS, (DWord) &protected_tasks[5]);
 
   /*** DO *NOT* ADD ANY CODE IN THIS ROUTINE BEFORE THIS POINT ***/
-  
   printk("Kernel Loaded!    ");
 
 
@@ -115,7 +114,7 @@ int __attribute__((__section__(".text.main")))
 
 /* Initialize an address space to be used for the monoprocess version of ZeOS */
 
-  monoprocess_init_addr_space(); /* TO BE DELETED WHEN ADDED THE PROCESS MANAGEMENT CODE TO BECOME MULTIPROCESS */
+  //monoprocess_init_addr_space(); /* TO BE DELETED WHEN ADDED THE PROCESS MANAGEMENT CODE TO BECOME MULTIPROCESS */
 
   /* process queues */
   init_freequeue();

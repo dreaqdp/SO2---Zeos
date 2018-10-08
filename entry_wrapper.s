@@ -57,12 +57,28 @@ ret_time:
  add $4, %esp #borrem el lea de ret_time
  pop %edx
  pop %ecx
-# cmp $0, %eax
-# jge acaba
-# lea errno, %ebx
-# mov %eax, (%ebx)
-# mov $-1, %eax
-#acaba:
  mov %ebp, %esp
  pop %ebp
+ ret
+
+.globl sys_getpid_wrapper; .type sys_getpid_wrapper, @function; .align 0; sys_getpid_wrapper:
+
+ push %ebp
+ mov %esp, %ebp
+ push %ecx
+ push %edx
+ lea ret_pid, %eax #perque pugui tornar el sysenter
+ push %eax
+ push %ebp #creem un fake dynamic link per facilitarnos la vida
+ movl %esp, %ebp
+ mov $20, %eax
+ sysenter
+ret_pid:
+    pop %ebp
+ add $4, %esp #borrem el lea de ret_time
+ pop %edx
+ pop %ecx
+ mov %ebp, %esp
+ pop %ebp
+ mov $435,%eax
  ret

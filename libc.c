@@ -59,3 +59,9 @@ int gettime () {
 	return sys_gettime_wrapper();
 }
 
+int sys_getpid_wrapper();
+int getpid(){
+	return sys_getpid_wrapper();
+}
+
+
