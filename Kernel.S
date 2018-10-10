@@ -10,6 +10,7 @@ ENTRY(task_switch)
 	push %ebx
 	push 8(%ebp)
 	call inner_task_switch
+	add $4, %esp
 	pop %ebx
 	pop %edi
 	pop %esi
