@@ -107,12 +107,12 @@ char jeje = 0;
 void keyboard_routine(){
 	if(jeje){
 		 task_switch(task1);
+		 printk("hola2!");
 		 jeje=0;
 	 }
 	else {
 		task_switch(idle_task);
-		printk("jajajaja");
-		int i; for(i=0;i<10000000000000;++i);
+		printk("hola!");
 		jeje=1;
 	}
 	/*

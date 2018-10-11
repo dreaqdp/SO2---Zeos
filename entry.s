@@ -68,7 +68,6 @@ sysenter_fin:
  sti
  sysexit
 
-
 .globl writeMSR; .type writeMSR, @function; .align 0; writeMSR:
  push %ebp
  mov %esp,%ebp

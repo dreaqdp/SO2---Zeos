@@ -1,6 +1,8 @@
 #include <asm.h>
 #include <segment.h>
 
+#.extern writeMSR
+
 ENTRY(task_switch)
 	push %ebp
 	mov %esp, %ebp
@@ -8,27 +10,19 @@ ENTRY(task_switch)
 	push %esi
 	push %edi
 	push %ebx
-	push 8(%ebp)
-	call inner_task_switch
-	add $4, %esp
-	pop %ebx
-	pop %edi
-	pop %esi
-	
-	mov %ebp, %esp
-	pop %ebp
-	ret
-	
-ENTRY(inner_task_switch)
-	push %ebp
-	mov %esp, %ebp
-
-		
-	mov 8(%ebp),%eax  #@new
+	#inner ----
+	mov 8(%ebp),%ebx  #@new
 	
 	#TSS.esp0=esp
 	lea tss, %edx
 	mov %esp, 4(%edx)
+	
+	#-- llegim el msr
+	#mov $0x175, %ecx
+	#rdmsr
+	#-- \llegim msr
+	
+	
 	
 	#MSR0x175=esp
 	push %esp
@@ -36,19 +30,34 @@ ENTRY(inner_task_switch)
 	call writeMSR
 	add $8, %esp
 	
+	#-- llegim el msr
+	#mov $0x175, %ecx
+	#rdmsr
+	#-- \llegim msr
+	
 	#setcr3
-	push 4(%eax) #pointer de dir_page
+	push 4(%ebx) #pointer de dir_page
 	call set_cr3
 	add $4, %esp
 	
-	#3
+	#3)
+
 	mov %ebp, %ecx
 	and $4096,%ecx
-	mov %ebp, 20(%ecx) #eeeem preguntar
+	mov %ebp, 20(%eax)
 	
 	#4)
-	mov 20(%eax),%esp #canvi de pila kernel
-	
-	popl %ebp
+	mov 16(%ebx),%esp #canvi de pila kernel
+	pop %ebp
 	ret
+	#inneer----
+
+	pop %ebx
+	pop %edi
+	pop %esi
+	
+	pop %ebp
+	ret
+	
+
 	

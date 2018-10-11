@@ -67,7 +67,7 @@ ENTRY(sys_getpid_wrapper)
 	sysenter
 ret_pid:
     pop %ebp
-	add $4, %esp	#borrem el lea de ret_time
+	add $4, %esp	#borrem el lea de ret_pid
 	pop %edx
 	pop %ecx
 	mov %ebp, %esp

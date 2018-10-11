@@ -39,12 +39,12 @@ int __attribute__ ((__section__(".text.main")))
 	//runjp();
 	
 	int p = getpid();
-	char* buff [10];
+	char buff [10];
 	itoa(p,buff);
 	write(1,buff,10);
 	
 	while(1){
-		//write(1,"4nite",6);
+		write(1,"4nite",6);
 	}
 	return 0;
 }

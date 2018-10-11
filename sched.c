@@ -56,7 +56,6 @@ void cpu_idle(void)
 	while(1)
 	{
 		printk("maincrah");
-	;
 	}
 }
 
@@ -67,12 +66,13 @@ void init_idle (void)
 {
 	idle_task = list_head_to_task_struct(list_first(&freequeue));
 	list_del(list_first(&freequeue));
-	idle_task->PID = 0;
+	idle_task->PID =10;
 	allocate_DIR(idle_task);
-	idle_task->kernel_esp = (unsigned int *)(idle_task+KERNEL_STACK_SIZE-1);
-	(*(idle_task->kernel_esp)) = &cpu_idle;
-	idle_task->kernel_esp = (idle_task->kernel_esp)-1; // ei
-	(*(idle_task->kernel_esp)) = 0; //set ebp=0 a la stack
+	idle_task->kernel_esp = ((unsigned int *)idle_task)+KERNEL_STACK_SIZE-1;
+	(*(idle_task->kernel_esp)) = (unsigned int)&cpu_idle;
+	idle_task->kernel_esp = (idle_task->kernel_esp)-1;
+	(*(idle_task->kernel_esp)) = 0;  //ebp=0 a l'stack
+
 }
 void writeMSR(int msr_id, int msr_value);
 void init_task1(void)
@@ -82,7 +82,7 @@ void init_task1(void)
 	task1->PID = 1;
 	allocate_DIR(task1);
 	set_user_pages(task1);
-	tss.esp0 = (DWord) idle_task+KERNEL_STACK_SIZE-1;
+	tss.esp0 = (DWord)(((unsigned int *)task1)+KERNEL_STACK_SIZE);
 	writeMSR(0x175,(int)tss.esp0);
 	set_cr3(task1->dir_pages_baseAddr);
 	

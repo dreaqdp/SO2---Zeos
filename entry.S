@@ -128,7 +128,6 @@ sysenter_fin:
 	sti
 	sysexit
 
-
 ENTRY(writeMSR)
 	push %ebp
 	mov %esp,%ebp
