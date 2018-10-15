@@ -48,10 +48,21 @@ int allocate_DIR(struct task_struct *t)
 
 	return 1;
 }
+extern struct task_struct * task1;
 
 void cpu_idle(void)
 {
 	__asm__ __volatile__("sti": : :"memory");
+	
+	/*char buf[2];
+	//itoa(sys_getpid(),buf);
+	//printk("hey");
+	int i;
+	for(i=0;i<100000;++i){
+		printk("coses boniques hola funciono");
+	}
+
+	task_switch(task1);*/
 
 	while(1)
 	{
@@ -66,7 +77,7 @@ void init_idle (void)
 {
 	idle_task = list_head_to_task_struct(list_first(&freequeue));
 	list_del(list_first(&freequeue));
-	idle_task->PID =10;
+	idle_task->PID = 0;
 	allocate_DIR(idle_task);
 	idle_task->kernel_esp = ((unsigned int *)idle_task)+KERNEL_STACK_SIZE-1;
 	(*(idle_task->kernel_esp)) = (unsigned int)&cpu_idle;

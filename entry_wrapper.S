@@ -74,5 +74,32 @@ ret_pid:
 	pop %ebp
 	ret	
 	
-
+ENTRY(sys_fork_wrapper)
+	push %ebp
+	mov %esp, %ebp
+	push %ecx
+	push %edx
+	lea retfork, %eax #perque pugui tornar el sysenter
+	push %eax
+	push %ebp #creem un fake dynamic link per facilitarnos la vida
+	movl %esp, %ebp
+	mov $2, %eax #posar id de la sys table
+	sysenter
+retfork:
+    pop %ebp
+	add $4, %esp	#borrem el lea de retwrite
+	pop %edx
+	pop %ecx
+	cmp $0, %eax
+	je fi_errfork
+	lea errno, %ebx
+	mov %eax, (%ebx)
+	mov $-1, %eax 
+	jmp fi_fork
+fi_errfork:
+	mov 16(%ebp), %eax
+fi_fork:
+	mov %ebp, %esp
+	pop %ebp
+	ret
 

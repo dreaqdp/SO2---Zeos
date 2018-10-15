@@ -64,4 +64,9 @@ int getpid(){
 	return sys_getpid_wrapper();
 }
 
+int sys_fork_wrapper();
+int fork(){
+  return sys_fork_wrapper();
+}
+
 

@@ -43,9 +43,17 @@ int sys_getpid()
 int sys_fork()
 {
   int PID=-1;
+  if(list_empty(list_first(&freequeue))) return EAGAIN;
+  struct task_struct* child_task = list_head_to_task_struct(list_first(&freequeue));
+  list_del(list_first(&freequeue));
+  copy_data((void *)current(), (void *)child_task, KERNEL_STACK_SIZE);
+  allocate_DIR(child_task);
+  int pagenumber = alloc_frame();
+  if (pagenumber<0) return ENOMEM;
+  page_table_entry * tpentry = get_PT(child_task);  // ei cal inicialitzar tots els camps de la pagina?
 
-  // creates the child process
-  
+
+
   return PID;
 }
 
