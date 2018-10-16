@@ -79,25 +79,26 @@ ENTRY(sys_fork_wrapper)
 	mov %esp, %ebp
 	push %ecx
 	push %edx
-	lea retfork, %eax #perque pugui tornar el sysenter
+	lea ret_fork, %eax #perque pugui tornar el sysenter
 	push %eax
 	push %ebp #creem un fake dynamic link per facilitarnos la vida
 	movl %esp, %ebp
 	mov $2, %eax #posar id de la sys table
 	sysenter
-retfork:
+ret_fork:
     pop %ebp
-	add $4, %esp	#borrem el lea de retwrite
+	add $4, %esp	#borrem el lea de retfork
 	pop %edx
 	pop %ecx
-	cmp $0, %eax
-	je fi_errfork
+	cmp $1313, %eax
+	jge fi_errfork
 	lea errno, %ebx
 	mov %eax, (%ebx)
 	mov $-1, %eax 
 	jmp fi_fork
 fi_errfork:
-	mov 16(%ebp), %eax
+	#mov $21312, %eax
+	#mov 16(%ebp), %eax
 fi_fork:
 	mov %ebp, %esp
 	pop %ebp

@@ -81,3 +81,34 @@ ret_pid:
  mov %ebp, %esp
  pop %ebp
  ret
+
+.globl sys_fork_wrapper; .type sys_fork_wrapper, @function; .align 0; sys_fork_wrapper:
+ push %ebp
+ mov %esp, %ebp
+ push %ecx
+ push %edx
+ lea ret_fork, %eax #perque pugui tornar el sysenter
+ push %eax
+ push %ebp #creem un fake dynamic link per facilitarnos la vida
+ movl %esp, %ebp
+ mov $2, %eax #posar id de la sys table
+ sysenter
+ret_fork:
+    add $4,%eax
+    pop %ebp
+ add $4, %esp #borrem el lea de retfork
+ pop %edx
+ pop %ecx
+ cmp $1313, %eax
+ jge fi_errfork
+ lea errno, %ebx
+ mov %eax, (%ebx)
+ mov $-1, %eax
+ jmp fi_fork
+fi_errfork:
+ #mov $21312, %eax
+ #mov 16(%ebp), %eax
+fi_fork:
+ mov %ebp, %esp
+ pop %ebp
+ ret

@@ -40,34 +40,67 @@ int sys_getpid()
 	return current()->PID;
 }
 
+extern union task_union *task;
+extern struct list_head freequeue; 
+
 int sys_fork()
 {
+  
+  printk("heeeey");
   int PID=-1;
-  if(list_empty(list_first(&freequeue))) return EAGAIN;
+  if (list_empty(list_first(&freequeue))) return EAGAIN;
   struct task_struct* child_task = list_head_to_task_struct(list_first(&freequeue));
   list_del(list_first(&freequeue));
   copy_data((void *)current(), (void *)child_task, KERNEL_STACK_SIZE);
   allocate_DIR(child_task);
-  int pagenumber = alloc_frame();
-  if (pagenumber<0) return ENOMEM;
-  page_table_entry * tpentry = get_PT(child_task);  // ei cal inicialitzar tots els camps de la pagina?
+  
+  // e i)
+  page_table_entry * father_tp = get_PT(current());
+  page_table_entry * child_tp = get_PT(child_task);  // ei cal inicialitzar tots els camps de la pagina?
+  int i;
+  // user code pages child <= user code pages father
+  for (i=0;i<NUM_PAG_CODE;++i){
+  	copy_data(father_tp + PAG_LOG_INIT_CODE + i,child_tp + PAG_LOG_INIT_CODE + i,PAGE_SIZE);
+  }
+  // kernel code
+  for (i=0;i<NUM_PAG_KERNEL;++i){
+  	copy_data(father_tp + i,child_tp + i,PAGE_SIZE);
+  }
+  // user data frames initialization
 
+  for (i=0;i<NUM_PAG_DATA;++i){
+	int pagenumber = alloc_frame();
+	if (pagenumber<0) return ENOMEM; //pregunta pablo : si hem d'alocar X pagines i nomes hi ha espai per X-1 no hauriem de desalocar les alocades? :D
+	set_ss_pag(child_tp,PAG_LOG_INIT_DATA+i,pagenumber);
+	// creem temp pel pare		//si peta ens mirem aixo pq hem confiat massa :D
+	set_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA+i,pagenumber);
+	copy_data(father_tp + PAG_LOG_INIT_DATA + i, father_tp+PAG_LOG_INIT_DATA+NUM_PAG_DATA+i, PAGE_SIZE );
+  }
+  //copy_data(father_tp + PAG_LOG_INIT_DATA , father_tp+PAG_LOG_INIT_DATA+NUM_PAG_DATA , PAGE_SIZE);
 
+  for(i=0;i<NUM_PAG_DATA;++i){
+					  //si peta ens mirem aixo pq hem confiat massa :D
+	del_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA+i);
+ }
+  set_cr3(get_DIR(current()));
+  
+  PID = (((unsigned int)child_task - (unsigned int)task)>>12) + 1313; //vacio legal no es la seva posicio
+  child_task->PID = PID;
 
+  unsigned int offset = (unsigned int *)current()-(current()->kernel_esp);
+  child_task->kernel_esp = (unsigned int)child_task+offset;
+  unsigned int * stackpointer = child_task->kernel_esp;
+  (*(stackpointer+3)) = 0; //eax de la kernel stack del fill = 0;
+  //no cal kernel_ebp crec peeeeeero
+  
+  printk("byeeee");
   return PID;
 }
 
 void sys_exit()
 {  
 }
-/* ops ens hem adonat que ja esta feta. som els putos amos
-int sys_write_console (char *buffer, int size) {
-	int x, y = 0;
-	for (x = 0; x < size; x++) {
-		printc_xy(x,y,buffer[x]);
-	}
-	return x;
-}*/
+
 int size_block = 4;
 int sys_write(int fd, char * buffer, int size) {
 	
@@ -95,11 +128,7 @@ int sys_write(int fd, char * buffer, int size) {
 int sys_gettime () {
 	return zeos_ticks;
 }
-/*
-extern TSS tss;
-int sys_getpid(){
-	return (*(tss.esp0&4096));
-}*/
+
 
 
 

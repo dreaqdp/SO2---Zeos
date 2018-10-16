@@ -19,6 +19,7 @@
  push %esi
  push %edi
  push %ebx
+
     push 8(%ebp)
  call inner_task_switch
  addl $4, %esp
