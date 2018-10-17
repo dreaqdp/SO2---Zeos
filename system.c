@@ -20,7 +20,7 @@ unsigned int *p_usr_size = (unsigned int *) KERNEL_START+1;
 unsigned int *p_rdtr = (unsigned int *) KERNEL_START+2;
 
 unsigned int zeos_ticks;
-
+extern int global_PID;
 /************************/
 /** Auxiliar functions **/
 /************************/
@@ -121,6 +121,8 @@ int __attribute__((__section__(".text.main")))
   /* Initialize Scheduling */
   init_sched();
 
+  // initialize global PID
+  global_PID = 2;
   /* Initialize idle task  data */
   init_idle();
   /* Initialize task 1 data */

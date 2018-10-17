@@ -47,8 +47,15 @@ inner_task_switch:
 	and $0xFFF000,%ecx
 	mov %ebp, 20(%ecx)
 	mov %esp, 16(%ecx)
-
 	#4)
+etiqueta:
 	mov %esi,%esp #canvi de pila kernel
 	pop %ebp
 	ret
+
+ENTRY(get_esp)
+	mov %esp,%eax
+    ret
+ENTRY(get_ebp)
+	mov %ebp,%eax
+    ret

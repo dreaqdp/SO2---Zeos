@@ -101,8 +101,8 @@ void setIdt()
 
 extern struct task_struct * idle_task;
 extern struct task_struct * task1; //si no la utilitzem no fer task1 global
-
-
+extern struct task_struct * child_task;
+//void task_switch(union task_struct*);
 
 void keyboard_routine(){
 
@@ -114,6 +114,7 @@ void keyboard_routine(){
 		if (llegit<n) result = char_map[llegit];
     if(result=='1') task_switch(task1);
     else if (result=='2') task_switch(idle_task);
+    else if (result=='3') task_switch(child_task);
 		printc_xy(0,0,result);		
 	}
 }

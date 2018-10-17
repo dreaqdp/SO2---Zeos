@@ -5,7 +5,7 @@
 #include <sched.h>
 #include <mm.h>
 #include <io.h>
-
+int global_PID;
 /**
  * Container for the Task array and 2 additional pages (the first and the last one)
  * to protect against out of bound accesses.

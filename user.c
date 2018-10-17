@@ -38,17 +38,18 @@ int __attribute__ ((__section__(".text.main")))
 
 	//runjp();
 	
-	int p = getpid();
-	char buff [10];
-	itoa(p,buff);
+
 	write(1,buff,10);
 	int pid= fork();
 	itoa(pid,buff);
 	while(1){
-		write(1,buff,8);
+		//int p = getpid();
+		//char buff [10];
+		//itoa(p,buff);
+		//write(1,buff,2);
 		//write(1,"4nite",6);
 	}
-	return 0;
+		return 0;
 }
 
 
