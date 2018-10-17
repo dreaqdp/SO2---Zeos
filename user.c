@@ -37,20 +37,16 @@ int __attribute__ ((__section__(".text.main")))
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
 	//runjp();
-	int i;
-	char buff[10];
 	int pid = fork();
-	if(pid!=0) {
-		pid = fork();
-	}
-	if(pid!=0){
-		int jaja = getpid();
-	} 
-	itoa(getpid(),buff);
-	//write(1,buff,10);
+	if(pid) pid=fork();
+	char buff[3];
+	int mypid = getpid();
+	if(mypid==2) exit();
+	itoa(mypid,buff);
 	while(1){
-	write(1,buff,10);
+		write(1,buff,3);
 	}
+
 	return 0;
 }
 

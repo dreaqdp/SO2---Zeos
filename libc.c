@@ -69,4 +69,8 @@ int fork(){
   return sys_fork_wrapper();
 }
 
+int sys_exit_wrapper();
+void exit(){
+  sys_exit_wrapper();
+}
 

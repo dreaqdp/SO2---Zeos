@@ -122,7 +122,6 @@ void set_quantum(struct task_struct *t, int new_quantum){
 	t->quantum = new_quantum;
 }
 
-void schedule();
 void update_sched_data_rr (void){
 	--ticks_process;
 }

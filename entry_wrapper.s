@@ -109,3 +109,24 @@ fi_fork:
  mov %ebp, %esp
  pop %ebp
  ret
+
+.globl sys_exit_wrapper; .type sys_exit_wrapper, @function; .align 0; sys_exit_wrapper:
+
+ push %ebp
+ mov %esp, %ebp
+ push %ecx
+ push %edx
+ lea ret_exit, %eax #perque pugui tornar el sysenter
+ push %eax
+ push %ebp #creem un fake dynamic link per facilitarnos la vida
+ movl %esp, %ebp
+ mov $1, %eax
+ sysenter
+ret_exit:
+    pop %ebp
+ add $4, %esp #borrem el lea de ret_pid
+ pop %edx
+ pop %ecx
+ mov %ebp, %esp
+ pop %ebp
+ ret
