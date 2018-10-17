@@ -52,12 +52,85 @@ struct task_struct* child_task;
 
 
 int ret_from_fork(){
-  printk("xd");
   return 0;
 }
 
+int sys_fork(){
+  int PID=-1;
+  if (list_empty(list_first(&freequeue))) return -EAGAIN;
+  //struct task_struct* child_task = list_head_to_task_struct(list_first(&freequeue));
+  child_task = list_head_to_task_struct(list_first(&freequeue));
+  list_del(list_first(&freequeue));  
+  //1->copiem l'union de la tasca del pare al fill
+  copy_data((void *)current(), (void *)child_task, (int)sizeof(union task_union));
+  //2->aloquem un directori (i tp) pel fill (es posa a la seva PCB també)
+  allocate_DIR(child_task);
+  //3->agafem les taules de pagines de pare i fill
+  page_table_entry * father_tp = get_PT(current());
+  page_table_entry * child_tp = get_PT(child_task);
+  //4->inicialitzo les pagines del fill corresponents al codi, mapejantles igual que les del pare
+  int i;
+  for (i=0;i<NUM_PAG_CODE;++i){
+    set_ss_pag(child_tp,PAG_LOG_INIT_CODE + i, get_frame(father_tp, PAG_LOG_INIT_CODE+i));
+  } 
+  //5-> inicialitzo les pagines del fill corresponents al kernel, mapejantles igual que les del pare
+  for (i=0;i<NUM_PAG_KERNEL;++i){
+    set_ss_pag(child_tp,i, get_frame(father_tp, i));
+  }
+  //6->junt : alloc fisiques dades fill, ini entrades TP de dades fill, temp i copia de les del pare.
+  int allocatedpages[NUM_PAG_DATA]; //vector per poder tirar enrere en cas de ENOMEM
+  for (i=0;i<NUM_PAG_DATA;++i){
+    //alloquem una frame fisica i la guardem al vector de pagines alocades
+    int pagenumber = alloc_frame();
+    allocatedpages[i]=pagenumber;
+    if (pagenumber<0) { //en cas d'error, fem la marcha atras.
+      int j;
+      for(j=0;j<i;++j) free_frame(allocatedpages[j]);
+      return -ENOMEM;
+    }
+    //inicialitzem una entrada de dades del child mapejada a la nova frame
+    set_ss_pag(child_tp,PAG_LOG_INIT_DATA+i,pagenumber); 
+    //inicialitzem una entrada de dades del pare mapejada a la nova frame per poder escriure coses a la física   
+    set_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA+i,pagenumber);
+    //el copy_data funciona amb @ lògiques (comencen al "0" per cada proces). el <<12 es pq nomes guardem un "tag" de la pag.física
+    copy_data((void*)((PAG_LOG_INIT_DATA + i)<<12), (void*)((PAG_LOG_INIT_DATA+NUM_PAG_DATA+i)<<12), PAGE_SIZE); 
+    //borrem les pàgines temporals que hem creat en la TP del pare
+    del_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA+i);
+  }
+  //fem flush del TLB del pare
+  set_cr3(get_DIR(current()));
+  //encuem el fill a la readyqueue
+  list_add(&(child_task->list), &readyqueue);
+  //Actualitzem el PID del fill
+  PID = global_PID++;
+  child_task->PID = PID;
+  //Actualizem el kernel_esp del fill, basantme en la transparencia nº52 del tema 4
+  //crec que lo de -18 i -19 era si no miraves que a les transpes posa que utilitzis el ebp i no el esp
+  int test=0;
+  if(!test){ //ENS VEIEM FORÇATS A PASSARLO PER AQUI..SI HO FEM POSANTO A EAX LA FUNCIO DE ENTRY.S  SYSTEM_CALL_HANDLER ENS SOBREESCRIU EL EAX DE LA PILA...
+              //POTSER PODRIEM APROFITAR UN ALTRE DELS DEL SAVE_ALL...HAURIA DE CANVIARS EL DEL +8
+    unsigned int ebp_father = get_ebp();
+    unsigned int offset = ebp_father - (unsigned int)current();
+    unsigned int * stackpointer = (unsigned int *) ( (unsigned int)child_task + offset);
+    (*stackpointer) = (unsigned int)&ret_from_fork;
+    stackpointer = stackpointer - 1;
+    (*stackpointer) = 0;
+    child_task->kernel_esp = stackpointer;
+  }else{ //per l'Andrea -> es el meu intent de evitar el ret from fork..al comentari superior diu pq no funciona
+    unsigned int ebp_father = get_ebp();
+    unsigned int offset = ebp_father - (unsigned int)current();
+    unsigned int * stackpointer = (unsigned int *) ( (unsigned int)child_task + offset);
+    (*(stackpointer+8)) = 0;
+    child_task->kernel_esp = stackpointer;
+  }
+  //encuem el fill a la readyqueue
+  list_add_tail(&(child_task->list), &readyqueue);
+  //retornem el PID del fill
+  return PID;
+}
 
-int sys_fork()
+
+int sys_fork_old()
 {
   int PID=-1;
   if (list_empty(list_first(&freequeue))) return -EAGAIN;
@@ -84,13 +157,13 @@ int sys_fork()
   // user data frames initialization
 
   for (i=0;i<NUM_PAG_DATA;++i){
-  	int pagenumber = alloc_frame();
-  	if (pagenumber<0) return -ENOMEM; //pregunta pablo : si hem d'alocar X pagines i nomes hi ha espai per X-1 no hauriem de desalocar les alocades? :D
-  	set_ss_pag(child_tp,PAG_LOG_INIT_DATA+i,pagenumber);
-  	// creem temp pel pare		//si peta ens mirem aixo pq hem confiat massa :D
-  	set_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA+i,pagenumber);
-  	copy_data((void*)((PAG_LOG_INIT_DATA + i)<<12), (void*)((PAG_LOG_INIT_DATA+NUM_PAG_DATA+i)<<12), PAGE_SIZE);
-	  del_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA+i);
+    int pagenumber = alloc_frame();
+    if (pagenumber<0) return -ENOMEM; //pregunta pablo : si hem d'alocar X pagines i nomes hi ha espai per X-1 no hauriem de desalocar les alocades? :D
+    set_ss_pag(child_tp,PAG_LOG_INIT_DATA+i,pagenumber);
+    // creem temp pel pare    //si peta ens mirem aixo pq hem confiat massa :D
+    set_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA+i,pagenumber);
+    copy_data((void*)((PAG_LOG_INIT_DATA + i)<<12), (void*)((PAG_LOG_INIT_DATA+NUM_PAG_DATA+i)<<12), PAGE_SIZE);
+    del_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA+i);
     
   }
   
@@ -125,113 +198,6 @@ int sys_fork()
 
   return PID;
 }
-
-/*
-int sys_fork() {
-
-  int PID=5;
-  
-  // a
-  if (list_empty(&freequeue)) return -1; // NO FREE PROCESS
-  struct list_head *e = list_first(&freequeue);
-  list_del(e);
-
-  struct task_struct *new_t = list_entry(e, struct task_struct, anchor);
-  union task_union *new_u = (union task_union*) new_t;
-
-  char buf[30]; itoa(new_t->PID, &buf); printk("PID: "); printk(buf); printk("\n");
-  
-  struct task_struct *curr_t = current();
-  union task_union *curr_u = (union task_union*) curr_t;
-
-  // b
-  copy_data(curr_u, new_u, KERNEL_STACK_SIZE * sizeof(long));
-
-  // c
-  allocate_DIR(new_t);
-  
-  // d
-  int dataFrames[NUM_PAG_DATA];
-  for (int i = 0; i < NUM_PAG_DATA; i++) {
-    dataFrames[i] = alloc_frame();
-    if (dataFrames[i] == -1) {
-      // free all allocated pages until now, we won't use them
-      for (int j = 0; j <= i; j++) free_frame(dataFrames[j]);
-      return -1; // Not enough physical pages left for new process
-    }
-  }
-  
-
-  // e.i
-  page_table_entry *new_PT =  get_PT(new_t);
-  page_table_entry *curr_PT =  get_PT(curr_t);  
-  // e.i.A  
-  copy_data(curr_PT, new_PT, NUM_PAG_CODE * sizeof(page_table_entry));
-  // e.i.B
-  for (int i = 0; i < NUM_PAG_DATA; i++) {
-    set_ss_pag(new_PT, PAG_LOG_INIT_DATA + i, dataFrames[i]);
-  }
-
-  // e.ii
-  int firstFree = NUM_PAG_KERNEL + NUM_PAG_CODE + NUM_PAG_DATA;
-  int p = firstFree;
-  for (int i = 0; i < NUM_PAG_CODE; i++) {
-    // p = first free page (entry != 0)
-    while (curr_PT[p].entry != 0 && p < TOTAL_PAGES) p++;
-    // we didn't find a page
-    if (p == TOTAL_PAGES) {
-      if (p == 0) return -1; // no free pages in parent process
-      
-      // we found a page at some point, but now we're full, flush TLB and start over
-      set_cr3(curr_t->dir_pages_baseAddr);
-      p = firstFree;
-      i--;
-      continue;
-    }
-    // there is a free page
-    // e.ii.A
-    set_ss_pag(curr_PT, p, curr_PT[PAG_LOG_INIT_DATA+i].bits.pbase_addr);
-    // e.ii.B
-
-    copy_data(((PAG_LOG_INIT_DATA+i)*PAGE_SIZE), p*PAGE_SIZE, PAGE_SIZE);
-    // e.ii.C
-    del_ss_pag(curr_PT, p);
-
-    
-    // flush tlb
-    set_cr3(curr_t->dir_pages_baseAddr);
-  }
-
-  // f
-  new_t->PID++; // TODO find a better pid lol
-
-  // g
-  // eax = 0 in the child
-  new_u->stack[KERNEL_STACK_SIZE-5] = 0; // return 0 to child
-
-
-  
-  
-
-  int ebp_offset = get_ebp() & 0xfff;
-  int new_ebp = ebp_offset + (int)new_t;
-
-
-
-  new_u->stack[ebp_offset/sizeof(long)] = 0;
-  new_u->task.kernel_esp = new_ebp;
-  new_u->stack[(ebp_offset+4)/sizeof(long)] = &ret_from_fork;
-
-  // h
-  
-  // i
-  list_add_tail(&new_t->list, &readyqueue);
-
-  // j
-  
-  return PID;
-}
-*/
 
 
 void sys_exit()

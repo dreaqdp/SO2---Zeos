@@ -66,9 +66,7 @@ int getpid(){
 
 int sys_fork_wrapper();
 int fork(){
-  int t = sys_fork_wrapper();
-  write(1,"oli",4);
-  return t;
+  return sys_fork_wrapper();
 }
 
 

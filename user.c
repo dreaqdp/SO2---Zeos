@@ -37,23 +37,21 @@ int __attribute__ ((__section__(".text.main")))
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
 	//runjp();
-	
-
-	write(1,buff,10);
-	int pid= fork();
-	//itoa(pid,buff);
-	int a = 1;
-	int b = a+2;
-	int c = b + a;
-	char buf[5];
-	itoa(c,buf);
-	write(1,buf,5);
+ 
+	int i;
+	int pid = fork();
+	int check_error = 0;
+	     //amb i<9, dona error pq no pot fer mes procesos :p
+	for(i=1;i<9 && check_error;++i){
+		pid= fork();
+		perror();
+	}
+	char buff[10];
+	itoa(pid,buff);
 	while(1){
-		//int p = getpid();
-		//char buff [10];
-		//itoa(p,buff);
-		//write(1,buff,2);
-		//if (pid!=0)write(1,"4nite",6);
+		if (pid==0)write(1,"soc el fill ",13);
+		else write(1,buff,10);
+		//else write(1,"soc el pare ",13);
 	}
 		return 0;
 }

@@ -66,7 +66,7 @@ void cpu_idle(void)
 
 	while(1)
 	{
-		printk("maincrah");
+		printk("soc el idle");
 	}
 }
 
@@ -96,7 +96,6 @@ void init_task1(void)
 	tss.esp0 = (DWord)(((unsigned int *)task1)+KERNEL_STACK_SIZE);
 	writeMSR(0x175,(int)tss.esp0);
 	set_cr3(task1->dir_pages_baseAddr);
-	
 }
 
 
