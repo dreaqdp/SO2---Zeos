@@ -41,13 +41,19 @@ int __attribute__ ((__section__(".text.main")))
 
 	write(1,buff,10);
 	int pid= fork();
-	itoa(pid,buff);
+	//itoa(pid,buff);
+	int a = 1;
+	int b = a+2;
+	int c = b + a;
+	char buf[5];
+	itoa(c,buf);
+	write(1,buf,5);
 	while(1){
 		//int p = getpid();
 		//char buff [10];
 		//itoa(p,buff);
 		//write(1,buff,2);
-		//write(1,"4nite",6);
+		//if (pid!=0)write(1,"4nite",6);
 	}
 		return 0;
 }
