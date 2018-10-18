@@ -36,7 +36,22 @@ int __attribute__ ((__section__(".text.main")))
     /* Next line, tries to move value 0 to CR3 register. This register is a privileged one, and so it will raise an exception */
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
-	//runjp();
+
+	runjp();
+	while(1){
+		;
+	}
+
+	return 0;
+	/*
+	struct stats p_stats;
+	char lele;
+	int error = get_stats(getpid(),NULL);
+	perror();
+	while(1);
+	return 0;*/
+
+	/*
 	int pid = fork();
 	if(pid) pid=fork();
 	char buff[3];
@@ -45,7 +60,7 @@ int __attribute__ ((__section__(".text.main")))
 	itoa(mypid,buff);
 	while(1){
 		write(1,buff,3);
-	}
+	}*/
 
 	return 0;
 }

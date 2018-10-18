@@ -112,6 +112,9 @@ ENTRY(system_call_handler)
 	push $__USER_CS  #code segment
 	push 4(%EBP)   #code adress
 	SAVE_ALL
+	push %eax
+	call enter_system
+	pop %eax
 	cmpl $0, %EAX
 	jl sysenter_err
 	cmpl $MAX_SYSCALL, %EAX
@@ -122,6 +125,9 @@ sysenter_err:
 	movl $-38, %EAX
 sysenter_fin:
 	movl %EAX, 0x18(%esp)
+	push %eax
+	call exit_system
+	pop %eax
 	RESTORE_ALL
 	movl (%ESP), %EDX #code address (return adress)
 	movl 12(%ESP), %ECX #stack address

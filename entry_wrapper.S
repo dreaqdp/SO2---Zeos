@@ -122,3 +122,34 @@ ret_exit:
 	mov %ebp, %esp
 	pop %ebp
 	ret	
+
+ENTRY(sys_get_stats_wrapper)
+	push %ebp
+	mov %esp, %ebp
+	mov 8(%ebp), %ebx    #pid
+	mov 12(%ebp), %ecx   #stats
+	push %ecx
+	push %edx
+	lea retgetstats, %eax #perque pugui tornar el sysenter
+	push %eax
+	push %ebp #creem un fake dynamic link per facilitarnos la vida
+	movl %esp, %ebp
+	mov $35, %eax
+	sysenter
+retgetstats:
+    pop %ebp
+	add $4, %esp	#borrem el lea de retwrite
+	pop %edx
+	pop %ecx
+	cmp $0, %eax
+	je fi_errgetstats
+	lea errno, %ebx
+	mov %eax, (%ebx)
+	mov $-1, %eax 
+	jmp fi_getstats
+fi_errgetstats:
+	mov 16(%ebp), %eax
+fi_getstats:
+	mov %ebp, %esp
+	pop %ebp
+	ret

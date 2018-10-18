@@ -8,7 +8,6 @@
 
 
 int global_PID;
-unsigned int ticks_process;
 /**
  * Container for the Task array and 2 additional pages (the first and the last one)
  * to protect against out of bound accesses.
@@ -59,7 +58,7 @@ void cpu_idle(void)
 
 	while(1)
 	{
-		printk("soc el idle");
+		//printk("soc el idle");
 	}
 }
 
@@ -98,9 +97,11 @@ void init_task1(void)
 	set_cr3(task1->dir_pages_baseAddr);
 }
 
+extern unsigned int get_ticks();
 
 void init_sched(){
-	ticks_process = task1->quantum;
+	task1->p_stats.remaining_ticks = task1->quantum;
+	//ticks_process = task1->quantum;
 }
 
 struct task_struct* current()
@@ -123,11 +124,11 @@ void set_quantum(struct task_struct *t, int new_quantum){
 }
 
 void update_sched_data_rr (void){
-	--ticks_process;
+	--current()->p_stats.remaining_ticks;
 }
 //returns 1 if it's necessary to change the current process
 int needs_sched_rr (void){
-	if (ticks_process==0) return 1;
+	if (current()->p_stats.remaining_ticks==0) return 1;
 	return 0;
 }
 
@@ -135,10 +136,10 @@ extern struct list_head readyqueue;
 void update_process_state_rr (struct task_struct * t, struct list_head * dst_queue){
 	
 	if (t->state==ST_RUN){
-		list_add_tail(&(t->list), dst_queue);
+		/*if(dst_queue == &readyqueue)*/ list_add_tail(&(t->list), dst_queue);
 	}else{
 		list_del(&(t->list));
-		if (dst_queue!=NULL) list_add_tail(&(t->list),dst_queue);
+		if (/*dst_queue==&readyqueue*/dst_queue!=NULL) list_add_tail(&(t->list),dst_queue);
 	}
 
 	if (dst_queue==&readyqueue){
@@ -156,9 +157,15 @@ void sched_next_rr (void){
 	struct list_head * h = list_first(&readyqueue); 
 	struct task_struct * next = list_head_to_task_struct(h);
 	update_process_state_rr(next, NULL);
-	ticks_process = get_quantum(next); //preguntar
+	current()->p_stats.remaining_ticks = get_quantum(next); //preguntar
+	unsigned long time1 = get_ticks();
+	next->p_stats.total_trans = next->p_stats.total_trans + 1;
 	task_switch((union task_union *)next);
-
+	unsigned long time2 = get_ticks();
+	current()->p_stats.ready_ticks += time2 - time1;
+	current()->p_stats.elapsed_total_ticks = time2;
+	//printnum(current()->p_stats.ready_ticks);
+    //
 }
 
 void schedule(){

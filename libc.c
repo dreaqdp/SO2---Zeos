@@ -74,3 +74,8 @@ void exit(){
   sys_exit_wrapper();
 }
 
+int sys_get_stats_wrapper();
+int get_stats(){
+  sys_get_stats_wrapper();
+}
+

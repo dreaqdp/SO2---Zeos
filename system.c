@@ -75,7 +75,7 @@ void init_freequeue(){
 	 INIT_LIST_HEAD( &freequeue);
 	 int i;
 	 for(i=0;i<NR_TASKS;++i){
-		task[i].task.PID=i;
+		task[i].task.PID=-1;
 		list_add_tail(&(task[i].task.list), &freequeue);
 	 }
 }
@@ -84,6 +84,7 @@ void init_readyqueue(){
 	INIT_LIST_HEAD(&readyqueue);
 }
 
+extern struct list_head blocked;
 int __attribute__((__section__(".text.main")))
   main(void)
 {
@@ -117,6 +118,7 @@ int __attribute__((__section__(".text.main")))
   /* process queues */
   init_freequeue();
   init_readyqueue();
+  INIT_LIST_HEAD(&blocked);
 
 
   // initialize global PID
@@ -132,7 +134,7 @@ int __attribute__((__section__(".text.main")))
 
   zeos_ticks = 0;
   printk("Entering user mode...");
-
+  zeos_init_auxjp();
   enable_int();
   /*
    * We return from a 'theorical' call to a 'call gate' to reduce our privileges

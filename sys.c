@@ -166,7 +166,32 @@ int sys_gettime () {
 	return zeos_ticks;
 }
 
+void enter_system(){
+  unsigned long current_time = get_ticks();
+  current()->p_stats.user_ticks += current_time - current()->p_stats.elapsed_total_ticks;
+  current()->p_stats.elapsed_total_ticks = current_time;
+}
+void exit_system(){
+  unsigned long current_time = get_ticks();
+  current()->p_stats.system_ticks += current_time - current()->p_stats.elapsed_total_ticks;
+  current()->p_stats.elapsed_total_ticks = current_time;
+}
+int sys_get_stats(int pid, struct stats *st){
+   int i;
+   char b = 0;
+   if (st==NULL) return EFAULT;
+   if (sizeof(*(st))!= sizeof(struct stats)) return EINVAL;
+   if(pid<0) return EINVAL;
+   for(i=0;i<NR_TASKS && b==0;++i){
+      if (pid == task[i].task.PID) {
+        *(st) = current()->p_stats;
+        b=1;
+        return 0;
+      }
+   }
+   return ESRCH;
 
+}
 
 
 
