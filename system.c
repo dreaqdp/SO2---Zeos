@@ -76,7 +76,7 @@ void init_freequeue(){
 	 int i;
 	 for(i=0;i<NR_TASKS;++i){
 		task[i].task.PID=i;
-		list_add(&(task[i].task.list), &freequeue);
+		list_add_tail(&(task[i].task.list), &freequeue);
 	 }
 }
 struct list_head readyqueue; 

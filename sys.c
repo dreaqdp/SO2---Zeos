@@ -35,32 +35,91 @@ int sys_ni_syscall()
 	return -38; /*ENOSYS*/
 }
 
+struct task_struct * child_task1;
+struct task_struct * child_task2;
+extern struct task_struct * task1;
+extern struct list_head readyqueue;
 int sys_getpid()
 {
-	return current()->PID;
+    /*if(child_task1!=NULL && child_task2!=NULL){
+	printk("\n");
+  printk("papa : ");
+  printnum((int)task1);
+  printk("  previ: ");
+  printnum(task1->list.prev);
+  printk("  next: ");
+  printnum(task1->list.next);
+  printk("\n");
+  printk("\n");
+  printk("fill1 : ");
+  printnum((int)child_task1);
+  printk("  previ: ");
+  printnum(child_task1->list.prev);
+  printk("  next: ");
+  printnum(child_task1->list.next);
+  printk("\n");
+  printk("\n");
+  printk("fill2: ");
+  printnum((int)child_task2);
+  printk("  previ: ");
+  printnum(child_task2->list.prev);
+  printk("  next: ");
+  printnum(child_task2->list.next);
+  printk("\n");
+  printk("\n");
+  printk("rc: ");
+  printnum((int)&readyqueue);
+  printk("  previ: ");
+  printnum(readyqueue.prev);
+  printk("  next: ");
+  printnum(readyqueue.next);
+}/*
+  struct list_head * e;
+  list_for_each( e, &readyqueue ){
+    printk ("\n");
+    printk("  previ: ");
+    printnum((int)(e->prev));
+    printk("  next: ");
+    printnum((int)(e->next));
+  }*/
+  return current()->PID;
 }
 
 extern union task_union *task;
 extern struct list_head freequeue; 
-extern struct list_head readyqueue; 
+ 
 extern int global_PID;
 unsigned int get_esp();
 unsigned int get_ebp();
 
 
-struct task_struct* child_task;
-
 
 int ret_from_fork(){
   return 0;
 }
+extern void printnum(int n);
+struct task_struct* child_task;
+
+int contador=0;
 
 int sys_fork(){
   int PID=-1;
   if (list_empty(&freequeue)) return -EAGAIN;
   //struct task_struct* child_task = list_head_to_task_struct(list_first(&freequeue));
-  child_task = list_head_to_task_struct(list_first(&freequeue));
-  list_del(list_first(&freequeue));  
+  struct list_head * h = list_first(&freequeue);
+  list_del(h);
+  child_task = list_head_to_task_struct(h);
+  
+
+
+  if (contador) child_task2 = child_task;
+  else{
+    ++contador;
+    child_task1 = child_task;
+  }
+
+
+
   //1->copiem l'union de la tasca del pare al fill
   copy_data((void *)current(), (void *)child_task, (int)sizeof(union task_union));
   //2->aloquem un directori (i tp) pel fill (es posa a la seva PCB també)
@@ -115,6 +174,15 @@ int sys_fork(){
   child_task->kernel_esp = stackpointer;
   //encuem el fill a la readyqueue
   list_add_tail(&(child_task->list), &readyqueue);
+  
+  /*printk("\n");
+  printk("fill : ");
+  printnum((int)child_task);
+  printk("  previ: ");
+  printnum(child_task->list.prev);
+  printk("  next: ");
+  printnum(child_task->list.next);*/
+
   child_task->state = ST_READY;
   //retornem el PID del fill
   return PID;

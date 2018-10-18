@@ -56,16 +56,6 @@ extern struct task_struct * task1;
 void cpu_idle(void)
 {
 	__asm__ __volatile__("sti": : :"memory");
-	
-	/*char buf[2];
-	//itoa(sys_getpid(),buf);
-	//printk("hey");
-	int i;
-	for(i=0;i<100000;++i){
-		printk("coses boniques hola funciono");
-	}
-
-	task_switch(task1);*/
 
 	while(1)
 	{
@@ -78,8 +68,10 @@ struct task_struct * idle_task;
 struct task_struct * task1; //si no la utilitzem no fer task1 global
 void init_idle (void)
 {
-	idle_task = list_head_to_task_struct(list_first(&freequeue));
-	list_del(list_first(&freequeue));
+	struct list_head *h = list_first(&freequeue);
+	list_del(h);
+	idle_task = list_head_to_task_struct(h);
+
 	idle_task->PID = 0;
 	idle_task->quantum = 500;
 	allocate_DIR(idle_task);
@@ -92,10 +84,13 @@ void init_idle (void)
 void writeMSR(int msr_id, int msr_value);
 void init_task1(void)
 {
-	task1 = list_head_to_task_struct(list_first(&freequeue));
-	list_del(list_first(&freequeue));
+	struct list_head *h = list_first(&freequeue);
+	list_del(h);
+	task1 = list_head_to_task_struct(h);
+
 	task1->PID = 1;
 	task1->quantum = 1000;
+	task1->state = ST_RUN;
 	allocate_DIR(task1);
 	set_user_pages(task1);
 	tss.esp0 = (DWord)(((unsigned int *)task1)+KERNEL_STACK_SIZE);
@@ -143,8 +138,8 @@ void update_process_state_rr (struct task_struct * t, struct list_head * dst_que
 	if (t->state==ST_RUN){
 		list_add_tail(&(t->list), dst_queue);
 	}else{
-		list_del(list_first(&(t->list)));
-		if (dst_queue!=NULL) list_add_tail(&(t->list), dst_queue);
+		list_del(&(t->list));
+		if (dst_queue!=NULL) list_add_tail(&(t->list),dst_queue);
 	}
 
 	if (dst_queue==&readyqueue){
@@ -159,9 +154,9 @@ void update_process_state_rr (struct task_struct * t, struct list_head * dst_que
 void task_switch(union task_union * t);
 extern void printnum(int n);
 void sched_next_rr (void){
-	struct task_struct * next =  list_head_to_task_struct(list_first(&readyqueue));
-	printnum(next);
-	update_process_state_rr(next,NULL);
+	struct list_head * h = list_first(&readyqueue); 
+	struct task_struct * next = list_head_to_task_struct(h);
+	update_process_state_rr(next, NULL);
 	ticks_process = get_quantum(next); //preguntar
 	task_switch((union task_union *)next);
 
@@ -170,7 +165,7 @@ void sched_next_rr (void){
 void schedule(){
 	update_sched_data_rr();
 	if(needs_sched_rr()){ //quantum over
-		if (!list_empty(&readyqueue)){ //es necessita fer un task switch (candidats disponibles)	
+		if (!list_empty(&readyqueue)) {
 			update_process_state_rr(current(),&readyqueue); //poses el current a la ready
 			sched_next_rr(); //canviar a la nova
 		}
