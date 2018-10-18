@@ -118,8 +118,6 @@ int __attribute__((__section__(".text.main")))
   init_freequeue();
   init_readyqueue();
 
-  /* Initialize Scheduling */
-  init_sched();
 
   // initialize global PID
   global_PID = 2;
@@ -127,7 +125,8 @@ int __attribute__((__section__(".text.main")))
   init_idle();
   /* Initialize task 1 data */
   init_task1();
-
+  /* Initialize Scheduling */
+  init_sched(); 
   /* Move user code/data now (after the page table initialization) */
   copy_data((void *) KERNEL_START + *p_sys_size, usr_main, *p_usr_size);
 
@@ -144,6 +143,13 @@ int __attribute__((__section__(".text.main")))
 
   /* The execution never arrives to this point */
   return 0;
+}
+
+
+void printnum(int n){
+  char buff[10];
+  itoa(n,buff);
+  printk(buff);
 }
 
 

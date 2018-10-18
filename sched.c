@@ -5,7 +5,10 @@
 #include <sched.h>
 #include <mm.h>
 #include <io.h>
+
+
 int global_PID;
+unsigned int ticks_process;
 /**
  * Container for the Task array and 2 additional pages (the first and the last one)
  * to protect against out of bound accesses.
@@ -78,6 +81,7 @@ void init_idle (void)
 	idle_task = list_head_to_task_struct(list_first(&freequeue));
 	list_del(list_first(&freequeue));
 	idle_task->PID = 0;
+	idle_task->quantum = 500;
 	allocate_DIR(idle_task);
 	idle_task->kernel_esp = ((unsigned int *)idle_task)+KERNEL_STACK_SIZE-1;
 	(*(idle_task->kernel_esp)) = (unsigned int)&cpu_idle;
@@ -91,6 +95,7 @@ void init_task1(void)
 	task1 = list_head_to_task_struct(list_first(&freequeue));
 	list_del(list_first(&freequeue));
 	task1->PID = 1;
+	task1->quantum = 1000;
 	allocate_DIR(task1);
 	set_user_pages(task1);
 	tss.esp0 = (DWord)(((unsigned int *)task1)+KERNEL_STACK_SIZE);
@@ -100,7 +105,7 @@ void init_task1(void)
 
 
 void init_sched(){
-
+	ticks_process = task1->quantum;
 }
 
 struct task_struct* current()
@@ -114,3 +119,60 @@ struct task_struct* current()
   return (struct task_struct*)(ret_value&0xfffff000);
 }
 
+
+int get_quantum (struct task_struct *t){
+	return t->quantum;
+}
+void set_quantum(struct task_struct *t, int new_quantum){
+	t->quantum = new_quantum;
+}
+
+void schedule();
+void update_sched_data_rr (void){
+	--ticks_process;
+}
+//returns 1 if it's necessary to change the current process
+int needs_sched_rr (void){
+	if (ticks_process==0) return 1;
+	return 0;
+}
+
+extern struct list_head readyqueue;
+void update_process_state_rr (struct task_struct * t, struct list_head * dst_queue){
+	
+	if (t->state==ST_RUN){
+		list_add_tail(&(t->list), dst_queue);
+	}else{
+		list_del(list_first(&(t->list)));
+		if (dst_queue!=NULL) list_add_tail(&(t->list), dst_queue);
+	}
+
+	if (dst_queue==&readyqueue){
+		t->state=ST_READY;
+	}else if (dst_queue==&freequeue){
+		t->state=ST_BLOCKED; //preguntar
+	}else if (dst_queue==NULL){
+		t->state=ST_RUN;
+	}
+
+}
+void task_switch(union task_union * t);
+extern void printnum(int n);
+void sched_next_rr (void){
+	struct task_struct * next =  list_head_to_task_struct(list_first(&readyqueue));
+	printnum(next);
+	update_process_state_rr(next,NULL);
+	ticks_process = get_quantum(next); //preguntar
+	task_switch((union task_union *)next);
+
+}
+
+void schedule(){
+	update_sched_data_rr();
+	if(needs_sched_rr()){ //quantum over
+		if (!list_empty(&readyqueue)){ //es necessita fer un task switch (candidats disponibles)	
+			update_process_state_rr(current(),&readyqueue); //poses el current a la ready
+			sched_next_rr(); //canviar a la nova
+		}
+	}
+}

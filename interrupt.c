@@ -118,8 +118,12 @@ void keyboard_routine(){
 		printc_xy(0,0,result);		
 	}
 }
+
+extern void schedule(void);
+
 void clk_routine() {
 	zeos_ticks++;
+  schedule();
 	zeos_show_clock();
 	
 }

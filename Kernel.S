@@ -26,12 +26,14 @@ inner_task_switch:
     push %ebp
     mov %esp, %ebp
 	mov 8(%ebp),%ebx  #@new
-	mov 16(%ebx),%esi #kernel esp del pcb del new
-	#TSS.esp0=esp
+	#mov 16(%ebx),%esi #kernel esp del pcb del new
+	mov %ebx, %esi
+	add $4096,%esi
+	#TSS.esp0=esp(abaix)
 	lea tss, %edx
 	mov %esi, 4(%edx)
 
-	#MSR0x175=esp
+	#MSR0x175=esp(abaix)
 	push %esi;
 	push $0x175 #cuidao si no compila
 	call writeMSR
@@ -45,11 +47,12 @@ inner_task_switch:
 	#3)
 	mov %ebp, %ecx
 	and $0xFFF000,%ecx
-	mov %ebp, 20(%ecx)
-	mov %esp, 16(%ecx)
+	mov %ebp, 16(%ecx)
+	#mov %esp, 16(%ecx)
 	#4)
 etiqueta:
-	mov %esi,%esp #canvi de pila kernel
+	#mov %esi,%esp #canvi de pila kernel
+	mov 16(%ebx),%esp
 	pop %ebp
 	ret
 

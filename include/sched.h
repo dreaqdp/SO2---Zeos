@@ -12,6 +12,7 @@
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
 
+
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED };
 
 struct task_struct {
@@ -19,7 +20,8 @@ struct task_struct {
   page_table_entry * dir_pages_baseAddr;
   struct list_head list;
   unsigned int * kernel_esp;
-  unsigned int * kernel_ebp;
+  enum state_t state;
+  int quantum;
 };
 
 union task_union {
