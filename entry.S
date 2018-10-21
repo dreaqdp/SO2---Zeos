@@ -52,10 +52,9 @@
       movl %edx, %es
 
 
+
+
 #define RESTORE_ALL \
-	  movl $__USER_DS, %edx; \
-      movl %edx, %es; \
-      movl %edx, %ds; \
       pop %ebx; \
       pop %ecx; \
       pop %edx; \
@@ -68,7 +67,11 @@
       pop %fs; \
       pop %gs
       
-
+	  /* feedback e1c: treure aquestes tres lineas de restore_all
+	  #movl $__USER_DS, %edx; \
+	  #movl %edx, %es; \
+	  #movl %edx, %ds; \ 
+	  */
 
 #define EOI      \
       movb $0x20, %al; \

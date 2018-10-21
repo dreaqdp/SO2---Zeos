@@ -79,11 +79,11 @@ void init_freequeue(){
 		list_add_tail(&(task[i].task.list), &freequeue);
 	 }
 }
+extern struct list_head blocked;
 struct list_head readyqueue; 
 void init_readyqueue(){
 	INIT_LIST_HEAD(&readyqueue);
 }
-
 extern struct list_head blocked;
 int __attribute__((__section__(".text.main")))
   main(void)
@@ -119,8 +119,6 @@ int __attribute__((__section__(".text.main")))
   init_freequeue();
   init_readyqueue();
   INIT_LIST_HEAD(&blocked);
-
-
   // initialize global PID
   global_PID = 2;
   /* Initialize idle task  data */

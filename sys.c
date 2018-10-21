@@ -130,12 +130,14 @@ int sys_fork(){
 
 void sys_exit()
 {  
-   page_table_entry * curr_tp = get_PT(current());
+   //per l'andrea: afeir a freeqeueu i no cal el bucle, ja el fa free user pages
+   /*page_table_entry * curr_tp = get_PT(current());
    int i;
    for(i=0;i<NUM_PAG_DATA;++i){
      free_frame(get_frame(curr_tp,PAG_LOG_INIT_DATA+i));
-   }
+   }*/
    free_user_pages(current());
+   list_add_tail(&(current()->list), &freequeue);
    sched_next_rr();
 
 }
@@ -165,21 +167,24 @@ int sys_write(int fd, char * buffer, int size) {
 int sys_gettime () {
 	return zeos_ticks;
 }
-
+//per l'andrea: he tret les variables locals current_time..
 void enter_system(){
-  unsigned long current_time = get_ticks();
-  current()->p_stats.user_ticks += current_time - current()->p_stats.elapsed_total_ticks;
-  current()->p_stats.elapsed_total_ticks = current_time;
+//  unsigned long current_time = get_ticks();
+//a)
+  current()->p_stats.user_ticks += get_ticks(); - current()->p_stats.elapsed_total_ticks;
+  current()->p_stats.elapsed_total_ticks = get_ticks();
 }
 void exit_system(){
-  unsigned long current_time = get_ticks();
-  current()->p_stats.system_ticks += current_time - current()->p_stats.elapsed_total_ticks;
-  current()->p_stats.elapsed_total_ticks = current_time;
+//b)
+ // unsigned long current_time = get_ticks();
+  current()->p_stats.system_ticks += get_ticks(); - current()->p_stats.elapsed_total_ticks;
+  current()->p_stats.elapsed_total_ticks = get_ticks();
 }
+//per l'andrea : afegit el acces_ok..no se si esta be
 int sys_get_stats(int pid, struct stats *st){
    int i;
    char b = 0;
-   if (st==NULL) return EFAULT;
+   if (st==NULL || !access_ok(VERIFY_READ,st,sizeof(struct stats))) return EFAULT;
    if (sizeof(*(st))!= sizeof(struct stats)) return EINVAL;
    if(pid<0) return EINVAL;
    for(i=0;i<NR_TASKS && b==0;++i){

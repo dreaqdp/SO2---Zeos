@@ -2,6 +2,11 @@
 ENTRY(sys_write_wrapper)
 	push %ebp
 	mov %esp, %ebp
+	#feedback e1c: guardar parametres
+	push %ebx
+	push %ecx
+	push %edx
+	##
 	mov 8(%ebp), %ebx    #fd
 	mov 12(%ebp), %ecx   #buffer
 	mov 16(%ebp), %edx   #size
@@ -27,6 +32,11 @@ retwrite:
 fi_errwrite:
 	mov 16(%ebp), %eax
 fi_write:
+	#feedback e1c: popejar reg guardats
+	pop %edx
+	pop %ecx
+	pop %ebx
+	##
 	mov %ebp, %esp
 	pop %ebp
 	ret
@@ -126,6 +136,10 @@ ret_exit:
 ENTRY(sys_get_stats_wrapper)
 	push %ebp
 	mov %esp, %ebp
+	#feedback e1c: guardar parametres
+	push %ebx
+	push %ecx
+	##
 	mov 8(%ebp), %ebx    #pid
 	mov 12(%ebp), %ecx   #stats
 	push %ecx
@@ -148,8 +162,12 @@ retgetstats:
 	mov $-1, %eax 
 	jmp fi_getstats
 fi_errgetstats:
-	mov 16(%ebp), %eax
+	mov 16(%ebp), %eax #guardar el codi d'error
 fi_getstats:
+	#feedback e1c: popejar regs guardats
+	pop %ecx
+	pop %ebx
+	##
 	mov %ebp, %esp
 	pop %ebp
 	ret

@@ -90,8 +90,9 @@ void setIdt()
   set_handlers();
 
   /* ADD INITIALIZATION CODE FOR INTERRUPT VECTOR */
-  setInterruptHandler(33,keyboard_handler,3);
-  setInterruptHandler(32,clk_handler,3);
+  //feedback e1c: permission  3 to 1
+  setInterruptHandler(33,keyboard_handler,0);
+  setInterruptHandler(32,clk_handler,0);
   //setTrapHandler(0x80,system_call_handler,3);
 
   set_idt_reg(&idtR);
@@ -100,7 +101,7 @@ void setIdt()
 //int sys_write_wrapper(int fd, char* buffer,int size);
 
 extern struct task_struct * idle_task;
-extern struct task_struct * task1; //si no la utilitzem no fer task1 global
+extern struct task_struct * task1; 
 extern struct task_struct * child_task;
 //void task_switch(union task_struct*);
 
@@ -112,9 +113,9 @@ void keyboard_routine(){
 	if ((llegit&0b10000000)==0){ //comprovem que es un "make"
 		unsigned int n = sizeof(char_map) / sizeof(char_map[0]);
 		if (llegit<n) result = char_map[llegit];
-    if(result=='1') task_switch(task1);
+    /*if(result=='1') task_switch(task1);
     else if (result=='2') task_switch(idle_task);
-    else if (result=='3') task_switch(child_task);
+    else if (result=='3') task_switch(child_task);*/
 		printc_xy(0,0,result);		
 	}
 }
