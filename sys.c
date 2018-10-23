@@ -65,7 +65,6 @@ int contador=0;
 int sys_fork(){
   int PID=-1;
   if (list_empty(&freequeue)) return -EAGAIN;
-  //struct task_struct* child_task = list_head_to_task_struct(list_first(&freequeue));
   struct list_head * h = list_first(&freequeue);
   list_del(h);
   child_task = list_head_to_task_struct(h);
@@ -107,6 +106,7 @@ int sys_fork(){
   }
   //fem flush del TLB del pare
   set_cr3(get_DIR(current()));
+
   //Actualitzem el PID del fill
   PID = global_PID++;
   child_task->PID = PID;
@@ -122,6 +122,8 @@ int sys_fork(){
   //encuem el fill a la readyqueue
   list_add_tail(&(child_task->list), &readyqueue);
   child_task->state = ST_READY;
+  struct stats newstats = {0, 0, 0, 0, 0, 0, child_task->quantum};
+  child_task->p_stats = newstats; //preguntar
   //retornem el PID del fill
   return PID;
 }
@@ -130,15 +132,13 @@ int sys_fork(){
 
 void sys_exit()
 {  
-   //per l'andrea: afeir a freeqeueu i no cal el bucle, ja el fa free user pages
-   /*page_table_entry * curr_tp = get_PT(current());
-   int i;
-   for(i=0;i<NUM_PAG_DATA;++i){
-     free_frame(get_frame(curr_tp,PAG_LOG_INIT_DATA+i));
-   }*/
-   free_user_pages(current());
-   list_add_tail(&(current()->list), &freequeue);
-   sched_next_rr();
+  free_user_pages(current());
+  current()->PID=-1;
+  list_add_tail(&(current()->list), &freequeue);
+
+
+
+  sched_next_rr();
 
 }
 
@@ -167,20 +167,20 @@ int sys_write(int fd, char * buffer, int size) {
 int sys_gettime () {
 	return zeos_ticks;
 }
-//per l'andrea: he tret les variables locals current_time..
+
 void enter_system(){
-//  unsigned long current_time = get_ticks();
 //a)
-  current()->p_stats.user_ticks += get_ticks(); - current()->p_stats.elapsed_total_ticks;
+  current()->p_stats.user_ticks += get_ticks() - current()->p_stats.elapsed_total_ticks;
   current()->p_stats.elapsed_total_ticks = get_ticks();
+
 }
 void exit_system(){
 //b)
  // unsigned long current_time = get_ticks();
-  current()->p_stats.system_ticks += get_ticks(); - current()->p_stats.elapsed_total_ticks;
+  current()->p_stats.system_ticks += get_ticks() - current()->p_stats.elapsed_total_ticks;
   current()->p_stats.elapsed_total_ticks = get_ticks();
 }
-//per l'andrea : afegit el acces_ok..no se si esta be
+
 int sys_get_stats(int pid, struct stats *st){
    int i;
    char b = 0;

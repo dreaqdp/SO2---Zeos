@@ -30,7 +30,7 @@ retwrite:
 	mov $-1, %eax 
 	jmp fi_write
 fi_errwrite:
-	mov 16(%ebp), %eax
+	mov 16(%ebp), %eax #retornem el tercer parametre (size)
 fi_write:
 	#feedback e1c: popejar reg guardats
 	pop %edx
@@ -156,13 +156,10 @@ retgetstats:
 	pop %edx
 	pop %ecx
 	cmp $0, %eax
-	je fi_errgetstats
+	je fi_getstats
 	lea errno, %ebx
 	mov %eax, (%ebx)
 	mov $-1, %eax 
-	jmp fi_getstats
-fi_errgetstats:
-	mov 16(%ebp), %eax #guardar el codi d'error
 fi_getstats:
 	#feedback e1c: popejar regs guardats
 	pop %ecx

@@ -72,12 +72,21 @@ extern union task_union *task; //pointer to task[1] (0 is protected)
 struct list_head freequeue; 
  
 void init_freequeue(){
-	 INIT_LIST_HEAD( &freequeue);
-	 int i;
-	 for(i=0;i<NR_TASKS;++i){
-		task[i].task.PID=-1;
-		list_add_tail(&(task[i].task.list), &freequeue);
-	 }
+   
+    INIT_LIST_HEAD(&freequeue);
+   int i;
+   for(i=0;i<NR_TASKS;++i){
+    task[i].task.PID=-1;
+    list_add_tail(&(task[i].task.list), &freequeue);
+   }
+/*
+   struct list_head * e;
+   list_for_each( e, &freequeue ) {
+      printk("\n");
+      printnum((int)e->prev);
+      printk(" ");
+      printnum((int)e->next);
+  }*/
 }
 extern struct list_head blocked;
 struct list_head readyqueue; 
@@ -147,7 +156,7 @@ int __attribute__((__section__(".text.main")))
 
 
 void printnum(int n){
-  char buff[10];
+  char buff[10] = "         ";
   itoa(n,buff);
   printk(buff);
 }

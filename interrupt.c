@@ -106,8 +106,7 @@ extern struct task_struct * child_task;
 //void task_switch(union task_struct*);
 
 void keyboard_routine(){
-
-	
+  enter_system();
 	Byte llegit = inb(0x60);
 	char result = 'C';
 	if ((llegit&0b10000000)==0){ //comprovem que es un "make"
@@ -118,15 +117,17 @@ void keyboard_routine(){
     else if (result=='3') task_switch(child_task);*/
 		printc_xy(0,0,result);		
 	}
+  exit_system();
 }
 
 extern void schedule(void);
 
 void clk_routine() {
+  enter_system();
 	zeos_ticks++;
   schedule();
 	zeos_show_clock();
-	
+	exit_system();
 }
 
 

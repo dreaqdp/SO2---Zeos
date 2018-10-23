@@ -74,7 +74,7 @@ void exit(){
   sys_exit_wrapper();
 }
 
-//per l'andrea: soc tonto faltava posar els parametres aqui i el return despres...
+
 int sys_get_stats_wrapper(int pid, struct stats *st);
 int get_stats(int pid, struct stats *st){
   return sys_get_stats_wrapper(pid,st);

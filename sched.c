@@ -72,7 +72,8 @@ void init_idle (void)
 	idle_task = list_head_to_task_struct(h);
 
 	idle_task->PID = 0;
-	idle_task->quantum = 100;
+	set_quantum(idle_task,50);
+	idle_task->p_stats.remaining_ticks = 50;
 	allocate_DIR(idle_task);
 	idle_task->kernel_esp = ((unsigned int *)idle_task)+KERNEL_STACK_SIZE-1;
 	(*(idle_task->kernel_esp)) = (unsigned int)&cpu_idle;
@@ -88,7 +89,8 @@ void init_task1(void)
 	task1 = list_head_to_task_struct(h);
 
 	task1->PID = 1;
-	task1->quantum = 500;
+	set_quantum(task1,50);
+	task1->p_stats.remaining_ticks = 50;
 	task1->state = ST_RUN;
 	allocate_DIR(task1);
 	set_user_pages(task1);
@@ -128,31 +130,36 @@ void update_sched_data_rr (void){
 }
 //returns 1 if it's necessary to change the current process
 int needs_sched_rr (void){
-	if (current()->p_stats.remaining_ticks==0) return 1;
+	if (current()->p_stats.remaining_ticks==0){
+		current()->p_stats.total_trans = current()->p_stats.total_trans + 1;
+		return 1;
+	}
 	return 0;
 }
 
 extern struct list_head readyqueue;
 void update_process_state_rr (struct task_struct * t, struct list_head * dst_queue){
-    //per l'andrea: he canviat el codi comentat per les dues lineas d'abaix..faltava 
-    //comprovar que dst_queue no fos null en el primer cas...
-    /*
-	if (t->state==ST_RUN){
-	    list_add_tail(&(t->list), dst_queue);
-	}else{
-		list_del(&(t->list));
-		if (dst_queue!=NULL) list_add_tail(&(t->list),dst_queue);
-	}*/
     if (t->state!=ST_RUN) list_del(&(t->list));
     if (dst_queue!=NULL) list_add_tail(&(t->list), dst_queue);
 
 	if (dst_queue==&readyqueue){
 		t->state=ST_READY;
-	}else if (dst_queue==&freequeue){//no hauria de passar mai
-		t->state=ST_BLOCKED; //preguntar
+	    //c)
+		//current()->p_stats.system_ticks += get_ticks()- current()->p_stats.elapsed_total_ticks;
+		//current()->p_stats.elapsed_total_ticks = get_ticks();
 	}else if (dst_queue==NULL){
 		t->state=ST_RUN;
+		//d)
+		//current()->p_stats.ready_ticks += get_ticks() - current()->p_stats.elapsed_total_ticks;
+		//current()->p_stats.elapsed_total_ticks = get_ticks();
+	}else{
+		//*((int *)-1)=10;
+		t->state=ST_BLOCKED; //preguntar
+		//c)
+		//current()->p_stats.system_ticks += get_ticks()- current()->p_stats.elapsed_total_ticks;
+		//current()->p_stats.elapsed_total_ticks = get_ticks();
 	}
+	
 
 }
 void task_switch(union task_union * t);
@@ -161,18 +168,19 @@ void sched_next_rr (void){
 	struct list_head * h = list_first(&readyqueue); 
 	struct task_struct * next = list_head_to_task_struct(h); //agafem el primer de la ready
 	update_process_state_rr(next, NULL); //treiem el nou de sa cua(segurament ready) i li canviem l'state
-	next->p_stats.total_trans = next->p_stats.total_trans + 1;
-	current()->p_stats.remaining_ticks = get_quantum(next); //preguntar?
-	//per l'andrea: he canviat aixo pq s'assembli a la pagina 58. en comptes de variables locals, utilitzar total elapsed(...)
- //c)
+	
+	// stats
+
 	current()->p_stats.system_ticks += get_ticks()- current()->p_stats.elapsed_total_ticks;
 	current()->p_stats.elapsed_total_ticks = get_ticks();
 
+	next->p_stats.remaining_ticks = get_quantum(next);
 	task_switch((union task_union *)next);
-//d)
+	current()->p_stats.total_trans = current()->p_stats.total_trans + 1;
+	current()->p_stats.remaining_ticks = get_quantum(current()); //provar treurel
+
 	current()->p_stats.ready_ticks += get_ticks() - current()->p_stats.elapsed_total_ticks;
 	current()->p_stats.elapsed_total_ticks = get_ticks();
-
 }
 
 void schedule(){
