@@ -29,7 +29,6 @@ long outer(long n)
 extern int errno;
 
 
-extern int jeje;
 int __attribute__ ((__section__(".text.main")))
   main()
 {

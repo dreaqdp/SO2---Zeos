@@ -5,7 +5,16 @@
 	La he encontrado haciendo
 	> make gdb
 	(gdb) p &myVar
+comprovar @física
+unsigned int get_physical_addr (unsigned int * val) {
+  page_table_entry * val_TP = get_PT(current());
+  unsigned int log_page = val >> 12;
+  unsigned int offset = val & 0x00000FFF;
+  return get_frame(val_TP, log_page) | offset; 
+}
+
 1.c page fault
-	@lógica = 0z11F60
+	@lógica = 0x11F60
 	> make gdb
 	(gdb) page_fault_routine
+a init_table_pages (de kernel) hi ha un comentari (línia 67) que diu:  // Logical page equal to physical page (frame)

@@ -23,6 +23,12 @@
 
 extern unsigned int zeos_ticks;
 
+unsigned int get_physical_addr (unsigned int * val) {
+  page_table_entry * val_TP = get_PT(current());
+  unsigned int log_page = val >> 12;
+  return get_frame(val_TP, log_page); 
+}
+
 int check_fd(int fd, int permissions)
 {
   if (fd!=1) return -9; /*EBADF*/
