@@ -100,9 +100,9 @@ void init_task1(void)
 }
 
 extern unsigned int get_ticks();
-
+unsigned int left_ticks;
 void init_sched(){
-	task1->p_stats.remaining_ticks = task1->quantum;
+	left_ticks = get_quantum(task1);
 	//ticks_process = task1->quantum;
 }
 
@@ -126,11 +126,12 @@ void set_quantum(struct task_struct *t, int new_quantum){
 }
 
 void update_sched_data_rr (void){
-	--current()->p_stats.remaining_ticks;
+	//--current()->p_stats.remaining_ticks;
+	--left_ticks;
 }
 //returns 1 if it's necessary to change the current process
 int needs_sched_rr (void){
-	if (current()->p_stats.remaining_ticks==0){
+	if (left_ticks == 0){
 		current()->p_stats.total_trans = current()->p_stats.total_trans + 1;
 		return 1;
 	}
@@ -144,20 +145,10 @@ void update_process_state_rr (struct task_struct * t, struct list_head * dst_que
 
 	if (dst_queue==&readyqueue){
 		t->state=ST_READY;
-	    //c)
-		//current()->p_stats.system_ticks += get_ticks()- current()->p_stats.elapsed_total_ticks;
-		//current()->p_stats.elapsed_total_ticks = get_ticks();
 	}else if (dst_queue==NULL){
 		t->state=ST_RUN;
-		//d)
-		//current()->p_stats.ready_ticks += get_ticks() - current()->p_stats.elapsed_total_ticks;
-		//current()->p_stats.elapsed_total_ticks = get_ticks();
 	}else{
-		//*((int *)-1)=10;
 		t->state=ST_BLOCKED; //preguntar
-		//c)
-		//current()->p_stats.system_ticks += get_ticks()- current()->p_stats.elapsed_total_ticks;
-		//current()->p_stats.elapsed_total_ticks = get_ticks();
 	}
 	
 
@@ -165,19 +156,26 @@ void update_process_state_rr (struct task_struct * t, struct list_head * dst_que
 void task_switch(union task_union * t);
 extern void printnum(int n);
 void sched_next_rr (void){
-	struct list_head * h = list_first(&readyqueue); 
-	struct task_struct * next = list_head_to_task_struct(h); //agafem el primer de la ready
+	struct task_struct * next;
+	if (!list_empty(&readyqueue)) {
+		struct list_head * h = list_first(&readyqueue); 
+		next = list_head_to_task_struct(h); //agafem el primer de la ready
+	}
+	else {
+		next = idle_task;
+	}
 	update_process_state_rr(next, NULL); //treiem el nou de sa cua(segurament ready) i li canviem l'state
-	
+
 	// stats
 
 	current()->p_stats.system_ticks += get_ticks()- current()->p_stats.elapsed_total_ticks;
 	current()->p_stats.elapsed_total_ticks = get_ticks();
 
-	next->p_stats.remaining_ticks = get_quantum(next);
+	//next->p_stats.remaining_ticks = get_quantum(next);
+	left_ticks = get_quantum(next);
 	task_switch((union task_union *)next);
 	current()->p_stats.total_trans = current()->p_stats.total_trans + 1;
-	current()->p_stats.remaining_ticks = get_quantum(current()); //provar treurel
+	//current()->p_stats.remaining_ticks = get_quantum(current()); //provar treurel
 
 	current()->p_stats.ready_ticks += get_ticks() - current()->p_stats.elapsed_total_ticks;
 	current()->p_stats.elapsed_total_ticks = get_ticks();
@@ -186,9 +184,8 @@ void sched_next_rr (void){
 void schedule(){
 	update_sched_data_rr();
 	if(needs_sched_rr()){ //quantum over
-		if (!list_empty(&readyqueue)) {
-			update_process_state_rr(current(),&readyqueue); //poses el current a la ready
-			sched_next_rr(); //canviar a la nova
-		}
+		if (current() != idle_task) update_process_state_rr(current(),&readyqueue); //poses el current a la ready
+		else current()->state=ST_READY;
+		sched_next_rr(); //canviar a la nova
 	}
 }

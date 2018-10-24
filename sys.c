@@ -122,7 +122,7 @@ int sys_fork(){
   //encuem el fill a la readyqueue
   list_add_tail(&(child_task->list), &readyqueue);
   child_task->state = ST_READY;
-  struct stats newstats = {0, 0, 0, 0, 0, 0, child_task->quantum};
+  struct stats newstats = {0, 0, 0, 0, 0, 0, 0};
   child_task->p_stats = newstats; //preguntar
   //retornem el PID del fill
   return PID;
@@ -135,11 +135,7 @@ void sys_exit()
   free_user_pages(current());
   current()->PID=-1;
   list_add_tail(&(current()->list), &freequeue);
-
-
-
   sched_next_rr();
-
 }
 
 int size_block = 4;
@@ -181,6 +177,7 @@ void exit_system(){
   current()->p_stats.elapsed_total_ticks = get_ticks();
 }
 
+extern unsigned int left_ticks;
 int sys_get_stats(int pid, struct stats *st){
    int i;
    char b = 0;
@@ -189,7 +186,10 @@ int sys_get_stats(int pid, struct stats *st){
    if(pid<0) return EINVAL;
    for(i=0;i<NR_TASKS && b==0;++i){
       if (pid == task[i].task.PID) {
-        *(st) = current()->p_stats;
+        if (current() == &task[i].task) task[i].task.p_stats.remaining_ticks = left_ticks;
+        else task[i].task.p_stats.remaining_ticks = 0;
+        //*(st) = current()->p_stats;
+        *(st) = task[i].task.p_stats;
         b=1;
         return 0;
       }
