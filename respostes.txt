@@ -1,0 +1,11 @@
+1.a
+1.b sched.c, línea 180, función void sched_next_rr(void)
+1.c 
+	@ lógica = 0x1081f8
+	La he encontrado haciendo
+	> make gdb
+	(gdb) p &myVar
+1.c page fault
+	@lógica = 0z11F60
+	> make gdb
+	(gdb) page_fault_routine
