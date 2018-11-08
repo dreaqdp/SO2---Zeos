@@ -176,3 +176,42 @@ fi_getstats:
  mov %ebp, %esp
  pop %ebp
  ret
+
+
+.globl sys_clone_wrapper; .type sys_clone_wrapper, @function; .align 0; sys_clone_wrapper:
+ push %ebp
+ mov %esp, %ebp
+ push %ecx
+ push %edx
+ ##params
+ push %ebx
+ push %ecx
+ mov 8(%ebp), %ebx #function
+ mov 12(%ebp), %ecx #stack
+ ##
+ lea ret_clone, %eax #perque pugui tornar el sysenter
+ push %eax
+ push %ebp #creem un fake dynamic link per facilitarnos la vida
+ movl %esp, %ebp #guardarse el esp per sysenter
+ mov $19, %eax #posar id de la sys table
+ sysenter
+ret_clone:
+    pop %ebp
+ add $4, %esp #borrem el lea de retfork
+ pop %edx
+ pop %ecx
+ cmp $0, %eax
+ jge fi_clone
+ not %eax #abs(errror)
+ inc %eax
+ lea errno, %ebx
+ mov %eax, (%ebx)
+ mov $-1, %eax
+fi_clone:
+ ##params
+ pop %ecx
+ pop %ebx
+
+ mov %ebp, %esp
+ pop %ebp
+ ret

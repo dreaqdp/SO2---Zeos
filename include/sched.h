@@ -20,7 +20,7 @@ struct task_struct {
   int PID;			/* Process ID. This MUST be the first field of the struct. */
   page_table_entry * dir_pages_baseAddr;
   struct list_head list;
-  unsigned int * kernel_esp;
+  unsigned int * kernel_esp; //realment guardem el ebp
   enum state_t state;
   int quantum;
   struct stats p_stats;

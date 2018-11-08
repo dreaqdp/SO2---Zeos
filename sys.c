@@ -23,12 +23,6 @@
 
 extern unsigned int zeos_ticks;
 
-unsigned int get_physical_addr (unsigned int * val) {
-  page_table_entry * val_TP = get_PT(current());
-  unsigned int log_page = val >> 12;
-  return get_frame(val_TP, log_page); 
-}
-
 int check_fd(int fd, int permissions)
 {
   if (fd!=1) return -9; /*EBADF*/
@@ -64,7 +58,6 @@ int ret_from_fork(){
   return 0;
 }
 extern void printnum(int n);
-struct task_struct* child_task;
 
 int contador=0;
 
@@ -73,7 +66,7 @@ int sys_fork(){
   if (list_empty(&freequeue)) return -EAGAIN;
   struct list_head * h = list_first(&freequeue);
   list_del(h);
-  child_task = list_head_to_task_struct(h);
+  struct task_struct* child_task = list_head_to_task_struct(h);
   //1->copiem l'union de la tasca del pare al fill
   copy_data((void *)current(), (void *)child_task, (int)sizeof(union task_union));
   //2->aloquem un directori (i tp) pel fill (es posa a la seva PCB també)
@@ -133,6 +126,43 @@ int sys_fork(){
   //retornem el PID del fill
   return PID;
 }
+
+int sys_clone(void (*function)(void), void *stack){
+  int PID=-1;
+
+
+  if (list_empty(&freequeue)) return -EAGAIN;
+  struct list_head * h = list_first(&freequeue);
+  list_del(h);
+  struct task_struct* thread_task = list_head_to_task_struct(h);
+  copy_data((void *)current(), (void *)thread_task, (int)sizeof(union task_union));
+
+  PID = global_PID++;
+  thread_task->PID = PID;
+  unsigned int ebp_father = get_ebp();
+  unsigned int offset = ebp_father - (unsigned int)current();
+  unsigned int * stackpointer = (unsigned int *) ( (unsigned int)thread_task + offset);
+
+  (*stackpointer) = (unsigned int)&ret_from_fork;
+  stackpointer = stackpointer - 1;
+  (*stackpointer) = 0;
+  thread_task->kernel_esp = stackpointer;
+
+  list_add_tail(&(thread_task->list), &readyqueue);
+  thread_task->state = ST_READY;
+  struct stats newstats = {0, 0, 0, 0, 0, 0, 0};
+  thread_task->p_stats = newstats;
+
+  *(((unsigned int *)thread_task)+KERNEL_STACK_SIZE-2) = stack;
+
+ // unsigned int * tmp = (unsigned int *)stack;
+ // *(tmp-1) = stack;
+ // *(tmp) = (unsigned int )stack;
+
+
+  return PID;
+}
+
 
 
 

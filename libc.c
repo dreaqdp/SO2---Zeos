@@ -74,9 +74,13 @@ void exit(){
   sys_exit_wrapper();
 }
 
-
 int sys_get_stats_wrapper(int pid, struct stats *st);
 int get_stats(int pid, struct stats *st){
   return sys_get_stats_wrapper(pid,st);
+}
+
+int sys_clone_wrapper();
+int clone(void (*function)(void), void *stack){
+  return sys_clone_wrapper(function, stack);
 }
 
