@@ -105,6 +105,9 @@ extern struct task_struct * task1;
 extern struct task_struct * child_task;
 //void task_switch(union task_struct*);
 
+extern struct list_head readyqueue;
+
+
 void keyboard_routine(){
   enter_system();
 	Byte llegit = inb(0x60);

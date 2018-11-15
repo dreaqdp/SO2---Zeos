@@ -8,6 +8,11 @@
 #include <hardware.h>
 #include <sched.h>
 
+
+int dir_counter[NR_TASKS];
+
+
+
 Byte phys_mem[TOTAL_PAGES];
 
 /* SEGMENTATION */

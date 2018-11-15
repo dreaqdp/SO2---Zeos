@@ -78,6 +78,7 @@
       outb %al, $0x20;
 
 ENTRY(keyboard_handler)	
+hola:
 	SAVE_ALL 
 	EOI
 	call keyboard_routine

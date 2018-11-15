@@ -10,7 +10,7 @@
 .globl sys_write_wrapper; .type sys_write_wrapper, @function; .align 0; sys_write_wrapper:
  push %ebp
  mov %esp, %ebp
- #feedback e1c: guardar parametres
+ #feedback e1c: guardar reg-param
  push %ebx
  push %ecx
  push %edx

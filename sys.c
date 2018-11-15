@@ -61,6 +61,8 @@ extern void printnum(int n);
 
 int contador=0;
 
+extern int dir_counter[NR_TASKS];
+
 int sys_fork(){
   int PID=-1;
   if (list_empty(&freequeue)) return -EAGAIN;
@@ -71,6 +73,8 @@ int sys_fork(){
   copy_data((void *)current(), (void *)child_task, (int)sizeof(union task_union));
   //2->aloquem un directori (i tp) pel fill (es posa a la seva PCB també)
   allocate_DIR(child_task);
+  dir_counter[((int)child_task-(int)task)/sizeof(union task_union)]=1;
+
   //3->agafem les taules de pagines de pare i fill
   page_table_entry * father_tp = get_PT(current());
   page_table_entry * child_tp = get_PT(child_task);
@@ -128,14 +132,15 @@ int sys_fork(){
 }
 
 int sys_clone(void (*function)(void), void *stack){
+  
   int PID=-1;
-
-
   if (list_empty(&freequeue)) return -EAGAIN;
   struct list_head * h = list_first(&freequeue);
   list_del(h);
   struct task_struct* thread_task = list_head_to_task_struct(h);
   copy_data((void *)current(), (void *)thread_task, (int)sizeof(union task_union));
+
+  dir_counter[((int)current()-(int)task)/sizeof(union task_union)]++;
 
   PID = global_PID++;
   thread_task->PID = PID;
@@ -153,6 +158,7 @@ int sys_clone(void (*function)(void), void *stack){
   struct stats newstats = {0, 0, 0, 0, 0, 0, 0};
   thread_task->p_stats = newstats;
 
+  *(((unsigned int *)thread_task)+KERNEL_STACK_SIZE-5) = function;
   *(((unsigned int *)thread_task)+KERNEL_STACK_SIZE-2) = stack;
 
  // unsigned int * tmp = (unsigned int *)stack;
