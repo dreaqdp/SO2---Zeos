@@ -79,8 +79,28 @@ int get_stats(int pid, struct stats *st){
   return sys_get_stats_wrapper(pid,st);
 }
 
-int sys_clone_wrapper();
+int sys_clone_wrapper(void (*function)(void), void *stack);
 int clone(void (*function)(void), void *stack){
   return sys_clone_wrapper(function, stack);
+}
+
+int sys_sem_init_wrapper(int n_sem, unsigned int value);
+int sem_init(int n_sem, unsigned int value){
+  return sys_sem_init_wrapper(n_sem,value);
+}
+
+int sys_sem_wait_wrapper(int n_sem);
+int sem_wait(int n_sem){
+  return sys_sem_wait_wrapper(n_sem);
+}
+
+int sys_sem_signal_wrapper(int n_sem);
+int sem_signal(int n_sem){
+  return sys_sem_signal_wrapper(n_sem);
+}
+
+int sys_sem_destroy_wrapper(int n_sem);
+int sem_destroy(int n_sem){
+  return sys_sem_destroy_wrapper(n_sem);
 }
 

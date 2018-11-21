@@ -207,3 +207,149 @@ fi_clone:
 	mov %ebp, %esp
 	pop %ebp
 	ret
+
+
+ENTRY(sys_sem_init_wrapper)
+	push %ebp
+	mov %esp, %ebp
+	#feedback e1c: guardar parametres
+	push %ebx
+	push %ecx
+	##
+	mov 8(%ebp), %ebx    #n_sem
+	mov 12(%ebp), %ecx   #value
+	push %ecx
+	push %edx
+	lea retseminit, %eax #perque pugui tornar el sysenter
+	push %eax
+	push %ebp #creem un fake dynamic link per facilitarnos la vida
+	movl %esp, %ebp
+	mov $21, %eax
+	sysenter
+retseminit:
+    pop %ebp
+	add $4, %esp	#borrem el lea de retwrite
+	pop %edx
+	pop %ecx
+	cmp $0, %eax
+	je fi_seminit
+	not %eax #abs(errror) 
+	inc %eax
+	lea errno, %ebx
+	mov %eax, (%ebx)
+	mov $-1, %eax 
+fi_seminit:
+	#feedback e1c: popejar regs guardats
+	pop %ecx
+	pop %ebx
+	##
+	mov %ebp, %esp
+	pop %ebp
+	ret
+
+ENTRY(sys_sem_wait_wrapper)
+	push %ebp
+	mov %esp, %ebp
+	#feedback e1c: guardar parametres
+	push %ebx
+	##
+	mov 8(%ebp), %ebx    #n_sem
+	push %ecx
+	push %edx
+	lea retsemwait, %eax #perque pugui tornar el sysenter
+	push %eax
+	push %ebp #creem un fake dynamic link per facilitarnos la vida
+	movl %esp, %ebp
+	mov $22, %eax
+	sysenter
+retsemwait:
+    pop %ebp
+	add $4, %esp	#borrem el lea de retwrite
+	pop %edx
+	pop %ecx
+	cmp $0, %eax
+	je fi_semwait
+	not %eax #abs(errror) 
+	inc %eax
+	lea errno, %ebx
+	mov %eax, (%ebx)
+	mov $-1, %eax 
+fi_semwait:
+	#feedback e1c: popejar regs guardats
+	pop %ebx
+	##
+	mov %ebp, %esp
+	pop %ebp
+	ret
+
+
+ENTRY(sys_sem_signal_wrapper)
+	push %ebp
+	mov %esp, %ebp
+	#feedback e1c: guardar parametres
+	push %ebx
+	##
+	mov 8(%ebp), %ebx    #n_sem
+	push %ecx
+	push %edx
+	lea retsemsignal, %eax #perque pugui tornar el sysenter
+	push %eax
+	push %ebp #creem un fake dynamic link per facilitarnos la vida
+	movl %esp, %ebp
+	mov $23, %eax
+	sysenter
+retsemsignal:
+    pop %ebp
+	add $4, %esp	#borrem el lea de retwrite
+	pop %edx
+	pop %ecx
+	cmp $0, %eax
+	je fi_semsignal
+	not %eax #abs(errror) 
+	inc %eax
+	lea errno, %ebx
+	mov %eax, (%ebx)
+	mov $-1, %eax 
+fi_semsignal:
+	#feedback e1c: popejar regs guardats
+	pop %ebx
+	##
+	mov %ebp, %esp
+	pop %ebp
+	ret
+
+
+ENTRY(sys_sem_destroy_wrapper)
+	push %ebp
+	mov %esp, %ebp
+	#feedback e1c: guardar parametres
+	push %ebx
+	##
+	mov 8(%ebp), %ebx    #n_sem
+	push %ecx
+	push %edx
+	lea retsemdestroy, %eax #perque pugui tornar el sysenter
+	push %eax
+	push %ebp #creem un fake dynamic link per facilitarnos la vida
+	movl %esp, %ebp
+	mov $24, %eax
+	sysenter
+retsemdestroy:
+    pop %ebp
+	add $4, %esp	#borrem el lea de retwrite
+	pop %edx
+	pop %ecx
+	cmp $0, %eax
+	je fi_semdestroy
+	not %eax #abs(errror) 
+	inc %eax	
+	lea errno, %ebx
+	mov %eax, (%ebx)
+	mov $-1, %eax 
+fi_semdestroy:
+	#feedback e1c: popejar regs guardats
+	pop %ebx
+	#
+	mov %ebp, %esp
+	pop %ebp
+	ret

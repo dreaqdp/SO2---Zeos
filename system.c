@@ -67,6 +67,8 @@ void setMSR(){
 /*
  *   Main entry point to ZEOS Operating System
  */
+
+
 extern union task_union *task; //pointer to task[1] (0 is protected)
  
 struct list_head freequeue; 
@@ -88,12 +90,35 @@ void init_freequeue(){
       printnum((int)e->next);
   }*/
 }
-extern struct list_head blocked;
+
+
+
 struct list_head readyqueue; 
 void init_readyqueue(){
 	INIT_LIST_HEAD(&readyqueue);
 }
-extern struct list_head blocked;
+
+//extern struct semaphore;
+
+
+struct semaphore{
+  int counter;
+  struct list_head blocked;
+  int owner_pid;
+  char destroyed;
+};
+struct semaphore sem_array[20];
+
+void init_sempahores(){
+  for(int i=0; i<20; ++i){
+    sem_array[i].counter = 0;
+    sem_array[i].destroyed = 0;
+    sem_array[i].owner_pid = -1;
+    INIT_LIST_HEAD(&sem_array[i].blocked);
+  }
+}
+
+
 int __attribute__((__section__(".text.main")))
   main(void)
 {
@@ -127,7 +152,11 @@ int __attribute__((__section__(".text.main")))
   /* process queues */
   init_freequeue();
   init_readyqueue();
-  INIT_LIST_HEAD(&blocked);
+  
+  /* init semaphores */
+
+  init_sempahores();
+
   // initialize global PID
   global_PID = 2;
   /* Initialize idle task  data */
