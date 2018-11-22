@@ -73,6 +73,7 @@ void init_idle (void)
 	idle_task = list_head_to_task_struct(h);
 
 	idle_task->PID = 0;
+	idle_task->semdestroyed = 0;
 	set_quantum(idle_task,50);
 	idle_task->p_stats.remaining_ticks = 50;
 	allocate_DIR(idle_task);
@@ -93,6 +94,7 @@ void init_task1(void)
 	set_quantum(task1,50);
 	task1->p_stats.remaining_ticks = 50;
 	task1->state = ST_RUN;
+	task1->semdestroyed = 0;
 	allocate_DIR(task1);
 	set_user_pages(task1);
 	tss.esp0 = (DWord)(((unsigned int *)task1)+KERNEL_STACK_SIZE);

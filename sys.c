@@ -17,9 +17,6 @@
 
 #include <types.h>
 
-#include <system.h>
-
-
 #define LECTURA 0
 #define ESCRIPTURA 1
 
@@ -134,8 +131,8 @@ int sys_clone(void (*function)(void), void *stack){
   int PID=-1;
   if (list_empty(&freequeue)) return -EAGAIN;
   // PREGUNTAR  : AIXO TAN CHULO DEL 0X2000 VALEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-  if ((int)function<L_USER_START || (int)function>=0x200000) return -EINVAL;
-  if ((int)stack < PAG_LOG_INIT_DATA || (int)stack < PAG_LOG_INIT_DATA+NUM_PAG_DATA*PAGE_SIZE) return -EINVAL;
+  if ((int)function<L_USER_START || (int)function>= (PAG_LOG_INIT_DATA+NUM_PAG_DATA)*PAGE_SIZE) return -EINVAL;
+  if ((int)stack < PAG_LOG_INIT_DATA*PAGE_SIZE || (int)stack >= (PAG_LOG_INIT_DATA+NUM_PAG_DATA)*PAGE_SIZE) return -EINVAL;
 
   struct list_head * h = list_first(&freequeue);
   list_del(h);
@@ -172,7 +169,6 @@ struct semaphore{
   int counter;
   struct list_head blocked;
   int owner_pid;
-  char destroyed;
 };
 
 extern struct semaphore sem_array[20];
@@ -184,7 +180,6 @@ int sys_sem_init (int n_sem, unsigned int value) {
   sem_array[n_sem].counter = value;
   INIT_LIST_HEAD(&sem_array[n_sem].blocked);
   sem_array[n_sem].owner_pid = current()->PID;
-  sem_array[n_sem].destroyed = 0;
   return 0;
 }
 
@@ -196,7 +191,11 @@ int sys_sem_wait (int n_sem) {
     list_add_tail(&(current()->list), &(sem_array[n_sem].blocked));
     sched_next_rr();
   }else --sem_array[n_sem].counter;
-  if (sem_array[n_sem].destroyed) return -EINVAL;
+
+  if (current()->semdestroyed){
+    current()->semdestroyed=0;
+    return -EINVAL;
+  }
   return 0;
 }
 
@@ -219,12 +218,11 @@ int sys_sem_destroy (int n_sem) {
   if (n_sem<0 || n_sem>=20 || sem_array[n_sem].owner_pid==-1) return -EINVAL;
   if (sem_array[n_sem].owner_pid != current()->PID) return -EPERM;
 
-  sem_array[n_sem].destroyed = !list_empty(&(sem_array[n_sem].blocked));
   while(!list_empty(&sem_array[n_sem].blocked)){
-    printk("x");
     struct list_head * h = list_first(&sem_array[n_sem].blocked);
     list_del(h);
     struct task_struct* thread_task = list_head_to_task_struct(h);
+    thread_task->semdestroyed = 1;
     thread_task->state = ST_READY;
     list_add_tail(&(thread_task->list), &readyqueue);
   }
@@ -240,7 +238,6 @@ void sys_exit() {
   for(int i=0; i<20; ++i){
     if(sem_array[i].owner_pid == current()->PID) sys_sem_destroy(i);
   }
-
 
   int pos = ((int)current()->dir_pages_baseAddr - (int)&dir_pages)>>12;
   --dir_counter[pos];
@@ -302,7 +299,6 @@ int sys_get_stats(int pid, struct stats *st){
       if (pid == task[i].task.PID) {
         if (current() == &task[i].task) task[i].task.p_stats.remaining_ticks = left_ticks;
         else task[i].task.p_stats.remaining_ticks = 0;
-        //*(st) = current()->p_stats;
         *(st) = task[i].task.p_stats;
         b=1;
         return 0;

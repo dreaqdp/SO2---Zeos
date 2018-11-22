@@ -24,6 +24,7 @@ struct task_struct {
   enum state_t state;
   int quantum;
   struct stats p_stats;
+  char semdestroyed;
 };
 
 union task_union {

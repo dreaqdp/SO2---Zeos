@@ -105,14 +105,12 @@ struct semaphore{
   int counter;
   struct list_head blocked;
   int owner_pid;
-  char destroyed;
 };
 struct semaphore sem_array[20];
 
 void init_sempahores(){
   for(int i=0; i<20; ++i){
     sem_array[i].counter = 0;
-    sem_array[i].destroyed = 0;
     sem_array[i].owner_pid = -1;
     INIT_LIST_HEAD(&sem_array[i].blocked);
   }
