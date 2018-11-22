@@ -75,7 +75,7 @@ struct list_head freequeue;
  
 void init_freequeue(){
    
-    INIT_LIST_HEAD(&freequeue);
+   INIT_LIST_HEAD(&freequeue);
    int i;
    for(i=0;i<NR_TASKS;++i){
     task[i].task.PID=-1;
@@ -91,12 +91,13 @@ void init_freequeue(){
   }*/
 }
 
-
-
+extern struct list_head keyboardqueue;
 struct list_head readyqueue; 
-void init_readyqueue(){
-	INIT_LIST_HEAD(&readyqueue);
+
+void init_queue(struct list_head *queue){
+	INIT_LIST_HEAD(queue);
 }
+
 
 //extern struct semaphore;
 
@@ -115,6 +116,7 @@ void init_sempahores(){
     INIT_LIST_HEAD(&sem_array[i].blocked);
   }
 }
+
 
 
 int __attribute__((__section__(".text.main")))
@@ -149,7 +151,8 @@ int __attribute__((__section__(".text.main")))
 
   /* process queues */
   init_freequeue();
-  init_readyqueue();
+  init_queue(&readyqueue);
+  init_queue(&keyboardqueue);
   
   /* init semaphores */
 
@@ -168,6 +171,7 @@ int __attribute__((__section__(".text.main")))
 
   zeos_ticks = 0;
   printk("Entering user mode...");
+
   zeos_init_auxjp();
   enable_int();
   /*
@@ -187,5 +191,9 @@ void printnum(int n){
   itoa(n,buff);
   printk(buff);
 }
+/*
+int size(void* p){
+  return sizeof(*p)/sizeof((p[0]));
+}*/
 
 

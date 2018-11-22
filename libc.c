@@ -104,3 +104,7 @@ int sem_destroy(int n_sem){
   return sys_sem_destroy_wrapper(n_sem);
 }
 
+int sys_read_wrapper(int fd, char* buffer, int count);
+int read(int fd, char* buffer, int count) {
+  return sys_read_wrapper(fd, buffer, count);
+}

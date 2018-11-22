@@ -353,3 +353,46 @@ fi_semdestroy:
 	mov %ebp, %esp
 	pop %ebp
 	ret
+
+
+ENTRY(sys_read_wrapper)
+	push %ebp
+	mov %esp, %ebp
+	#feedback e1c: guardar reg-param
+	push %ebx
+	push %ecx
+	push %edx
+	##
+	mov 8(%ebp), %ebx    #fd
+	mov 12(%ebp), %ecx   #buffer
+	mov 16(%ebp), %edx   #size
+	push %ecx
+	push %edx
+	lea retread, %eax #perque pugui tornar el sysenter
+	push %eax
+	push %ebp #creem un fake dynamic link per facilitarnos la vida
+	movl %esp, %ebp
+	mov $3, %eax
+	sysenter
+retread:
+    pop %ebp
+	add $4, %esp	#borrem el lea de retwrite
+	pop %edx
+	pop %ecx
+	cmp $0, %eax
+	je fi_errread
+	lea errno, %ebx
+	mov %eax, (%ebx)
+	mov $-1, %eax 
+	jmp fi_read
+fi_errread:
+	mov 16(%ebp), %eax #retornem el tercer parametre (size)
+fi_read:
+	#feedback e1c: popejar reg guardats
+	pop %edx
+	pop %ecx
+	pop %ebx
+	##
+	mov %ebp, %esp
+	pop %ebp
+	ret

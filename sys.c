@@ -310,4 +310,27 @@ int sys_get_stats(int pid, struct stats *st){
 
 
 
+int sys_read(int fd, char *buffer, int count){
+  int error_fd = check_fd(fd, LECTURA);
+  if (error_fd < 0) return -error_fd;
+  if (buffer == NULL) return EFAULT;
+  if (count < 0) return EINVAL;
+ 
+  sys_read_keyboard(buffer,count);
+
+  return 0;
+}
+
+extern struct list_head keyboardqueue;
+
+void sys_read_keyboard(char * buffer, int count){
+
+  if(!list_empty(&keyboardqueue)){
+    
+  }
+
+}
+
+
+
 
