@@ -25,6 +25,7 @@ struct task_struct {
   int quantum;
   struct stats p_stats;
   char semdestroyed;
+  unsigned char * programbreak;
 };
 
 union task_union {

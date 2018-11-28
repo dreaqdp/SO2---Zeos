@@ -361,3 +361,81 @@ fi_semdestroy:
  mov %ebp, %esp
  pop %ebp
  ret
+
+
+.globl sys_read_wrapper; .type sys_read_wrapper, @function; .align 0; sys_read_wrapper:
+ push %ebp
+ mov %esp, %ebp
+ #feedback e1c: guardar reg-param
+ push %ebx
+ push %ecx
+ push %edx
+ ##
+ mov 8(%ebp), %ebx #fd
+ mov 12(%ebp), %ecx #buffer
+ mov 16(%ebp), %edx #size
+ push %ecx
+ push %edx
+ lea retread, %eax #perque pugui tornar el sysenter
+ push %eax
+ push %ebp #creem un fake dynamic link per facilitarnos la vida
+ movl %esp, %ebp
+ mov $3, %eax
+ sysenter
+retread:
+    pop %ebp
+ add $4, %esp #borrem el lea de retwrite
+ pop %edx
+ pop %ecx
+ cmp $0, %eax
+ je fi_errread
+ lea errno, %ebx
+ mov %eax, (%ebx)
+ mov $-1, %eax
+ jmp fi_read
+fi_errread:
+ mov 16(%ebp), %eax #retornem el tercer parametre (size)
+fi_read:
+ #feedback e1c: popejar reg guardats
+ pop %edx
+ pop %ecx
+ pop %ebx
+ ##
+ mov %ebp, %esp
+ pop %ebp
+ ret
+
+.globl sys_sbrk_wrapper; .type sys_sbrk_wrapper, @function; .align 0; sys_sbrk_wrapper:
+ push %ebp
+ mov %esp, %ebp
+ push %ecx
+ push %edx
+ ##params
+ push %ebx
+ mov 8(%ebp), %ebx #increment
+ ##
+ lea ret_sbrk, %eax #perque pugui tornar el sysenter
+ push %eax
+ push %ebp #creem un fake dynamic link per facilitarnos la vida
+ movl %esp, %ebp #guardarse el esp per sysenter
+ mov $13, %eax #posar id de la sys table
+ sysenter
+ret_sbrk:
+    pop %ebp
+ add $4, %esp #borrem el lea de retfork
+ pop %edx
+ pop %ecx
+ cmp $0, %eax
+ jge fi_sbrk
+ not %eax #abs(errror)
+ inc %eax
+ lea errno, %ebx
+ mov %eax, (%ebx)
+ mov $-1, %eax
+fi_sbrk:
+ ##params
+ pop %ecx
+
+ mov %ebp, %esp
+ pop %ebp
+ ret

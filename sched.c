@@ -89,7 +89,7 @@ void init_task1(void)
 	struct list_head *h = list_first(&freequeue);
 	list_del(h);
 	task1 = list_head_to_task_struct(h);
-
+	task1->programbreak = (unsigned int *)ADDRESS_LOG_INIT_HEAP;
 	task1->PID = 1;
 	set_quantum(task1,50);
 	task1->p_stats.remaining_ticks = 50;
@@ -151,13 +151,14 @@ void update_process_state_rr (struct task_struct * t, struct list_head * dst_que
 	}else if (dst_queue==NULL){
 		t->state=ST_RUN;
 	}else{
-		t->state=ST_BLOCKED; //preguntar
+		t->state=ST_BLOCKED; 
 	}
 	
 
 }
 void task_switch(union task_union * t);
 extern void printnum(int n);
+
 void sched_next_rr (void){
 	struct task_struct * next;
 	if (!list_empty(&readyqueue)) {
@@ -166,6 +167,8 @@ void sched_next_rr (void){
 	}
 	else {
 		next = idle_task;
+		task_switch((union task_union *)next);
+		return;
 	}
 	update_process_state_rr(next, NULL); //treiem el nou de sa cua(segurament ready) i li canviem l'state
 
@@ -188,7 +191,6 @@ void schedule(){
 	update_sched_data_rr();
 	if(needs_sched_rr()){ //quantum over
 		if (current() != idle_task) update_process_state_rr(current(),&readyqueue); //poses el current a la ready
-		else current()->state=ST_READY;
 		sched_next_rr(); //canviar a la nova
 	}
 }

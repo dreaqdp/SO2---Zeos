@@ -17,6 +17,8 @@
 
 #include <types.h>
 
+//#include<circbuff.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 
@@ -130,7 +132,6 @@ int sys_clone(void (*function)(void), void *stack){
   
   int PID=-1;
   if (list_empty(&freequeue)) return -EAGAIN;
-  // PREGUNTAR  : AIXO TAN CHULO DEL 0X2000 VALEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
   if ((int)function<L_USER_START || (int)function>= (PAG_LOG_INIT_DATA+NUM_PAG_DATA)*PAGE_SIZE) return -EINVAL;
   if ((int)stack < PAG_LOG_INIT_DATA*PAGE_SIZE || (int)stack >= (PAG_LOG_INIT_DATA+NUM_PAG_DATA)*PAGE_SIZE) return -EINVAL;
 
@@ -311,23 +312,95 @@ int sys_get_stats(int pid, struct stats *st){
 
 
 int sys_read(int fd, char *buffer, int count){
-  int error_fd = check_fd(fd, LECTURA);
-  if (error_fd < 0) return -error_fd;
+
+  // preguntar: fd closed com ho comprovem? o WRONLY? fd max? test[1], [2], [10] respectivament
+  if (fd < 0 || (fd > 0 && fd <= 2)) return EBADF;
   if (buffer == NULL) return EFAULT;
   if (count < 0) return EINVAL;
  
+  if ((int)buffer < PAG_LOG_INIT_DATA*PAGE_SIZE || (int)buffer >= (PAG_LOG_INIT_DATA+NUM_PAG_DATA)*PAGE_SIZE) return EFAULT;
+
   sys_read_keyboard(buffer,count);
 
   return 0;
 }
 
 extern struct list_head keyboardqueue;
+extern int keyboard_readers_count[NR_TASKS];
 
 void sys_read_keyboard(char * buffer, int count){
-
+  keyboard_readers_count[((int)current()-(int)task)/sizeof(union task_union)] = count;
   if(!list_empty(&keyboardqueue)){
-    
+    update_process_state_rr (current(), &keyboardqueue);
+    sched_next_rr();
+    return;
   }
+
+  int i;
+  while (i < count) {
+    if (!circbuff_empty()) {
+      buffer[i] = circbuff_front();
+      circbuff_pop();
+      i++;
+    }
+    else {
+      current()->state = ST_BLOCKED;
+      list_add(&(current()->list), &keyboardqueue);
+      sched_next_rr();
+    }
+  }
+}
+
+
+void *sys_sbrk(int increment){
+
+
+    unsigned char *endaddress = current()->programbreak + increment;
+    // preguntar: fins on arriba el heap? i des de on?
+    if (endaddress < ADDRESS_LOG_INIT_HEAP || endaddress >= TOTAL_PAGES*PAGE_SIZE) return ENOMEM;
+
+
+    page_table_entry * current_tp = get_PT(current());
+    unsigned int ini_programbreak_page = (unsigned int)current()->programbreak >> 12; //treiem l'offset
+    unsigned int new_programbreak_page = (unsigned int)endaddress >> 12; //treiem l'offset
+
+    if(increment>0){
+      volatile unsigned int npages = new_programbreak_page - ini_programbreak_page;
+      if(!((int)current()->programbreak & 0x0FFF)){
+        int pagenumber = alloc_frame();
+        set_ss_pag(current_tp,ini_programbreak_page,pagenumber); 
+      }
+      int allocatedpages[npages];
+      for (int i=0; i<npages; ++i){
+        int pagenumber = alloc_frame();
+        allocatedpages[i]=pagenumber;
+        if (pagenumber<0) {
+          int j;
+          for(j=0;j<i;++j) free_frame(allocatedpages[j]);
+          return -ENOMEM;
+        }
+        set_ss_pag(current_tp,ini_programbreak_page+1+i,pagenumber); 
+      }
+    }else if(increment<0){
+      unsigned int npages = ini_programbreak_page - new_programbreak_page;
+      int i;
+      for (i = 0; i < npages; i++) {
+        free_frame(ini_programbreak_page - i);
+        del_ss_pag(current_tp,ini_programbreak_page - i);
+      }
+
+      if (!((int)endaddress & 0x0FFF)) {
+        free_frame(new_programbreak_page);
+        del_ss_pag(current_tp,new_programbreak_page);
+      }
+      set_cr3(get_DIR(current()));
+
+    }
+
+
+
+    current()->programbreak = endaddress;
+    return (void *)endaddress;
 
 }
 

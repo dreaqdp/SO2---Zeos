@@ -7,6 +7,8 @@
 #include <hardware.h>
 #include <io.h>
 
+#include<circbuff.h>
+
 #include <zeos_interrupt.h>
 
 
@@ -114,35 +116,6 @@ extern struct list_head readyqueue;
 struct list_head keyboardqueue;
 int keyboard_readers_count[NR_TASKS];
 
-int circbuffcounter = 0;
-char keybuffer[666];
-char *circbuffptr_last = &keybuffer; 
-char *circbuffptr_first = &keybuffer;
-
-void circbuff_push(char k){
-  *circbuffptr_last = k;
-  circbuffptr_last = (char *)(((int)circbuffptr_last+1) % (sizeof(keybuffer)/sizeof(keybuffer[0])));
-  ++circbuffcounter;
-}
-
-char curcbuff_front(){
-  return *circbuffptr_first;
-}
-
-void circbuff_pop(){
-  circbuffptr_first = (char *)(((int)circbuffptr_first+1) % (sizeof(keybuffer)/sizeof(keybuffer[0])));
-  --circbuffcounter;
-}
-
-char circbuff_empty(){
-  return (circbuffcounter==0);
-}
-char circbuff_full(){
-  return (circbuffcounter==sizeof(keybuffer)/sizeof(keybuffer[0]));
-}
-int circbuff_count(){
-  return circbuffcounter;
-}
 
 
 void keyboard_routine(){
@@ -154,24 +127,25 @@ void keyboard_routine(){
   	if ((llegit&0b10000000)==0){ //comprovem que es un "make"
   		unsigned int n = sizeof(char_map) / sizeof(char_map[0]);
   		if (llegit<n) result = char_map[llegit];
-  		printc_xy(0,0,result);
+  		//printc_xy(0,0,result);
       
-
       //new
-      circbuff_push(result);
+      if (!list_empty(&keyboardqueue)) {
+        circbuff_push(result);
 
-      struct list_head * h = list_first(&keyboardqueue);
-      struct task_struct* keyboard_reader = list_head_to_task_struct(h);
-      int remaining = keyboard_readers_count[((int)keyboard_reader-(int)task)/sizeof(union task_union)];
+        struct list_head * h = list_first(&keyboardqueue);
+        struct task_struct* keyboard_reader = list_head_to_task_struct(h);
+        int remaining = keyboard_readers_count[((int)keyboard_reader-(int)task)/sizeof(union task_union)];
 
-      if (circbuff_full() || circbuff_count()==remaining){
-        keyboard_readers_count[((int)keyboard_reader-(int)task)/sizeof(union task_union)] = remaining-circbuff_count();
-        list_del(h);
-        keyboard_reader->state = ST_READY;
-        list_add(&(keyboard_reader->list), &readyqueue); //PREGUNTAR SI S'HA DEXECUTAR IMMEDIATAMENT O FICAR-SE AL FINAL
-        sched_next_rr();
+        if (circbuff_full() || circbuff_count()==remaining){
+          keyboard_readers_count[((int)keyboard_reader-(int)task)/sizeof(union task_union)] = remaining-circbuff_count();
+          list_del(h);
+          keyboard_reader->state = ST_READY;
+          list_add(&(keyboard_reader->list), &readyqueue);
+          update_process_state_rr(current(),&readyqueue);
+          sched_next_rr();
+        }  
       }
-
   	}
   }
   exit_system();

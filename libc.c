@@ -108,3 +108,8 @@ int sys_read_wrapper(int fd, char* buffer, int count);
 int read(int fd, char* buffer, int count) {
   return sys_read_wrapper(fd, buffer, count);
 }
+
+void *sys_sbrk_wrapper(int increment);
+void *sbrk(int increment){
+  return sys_sbrk_wrapper(increment);
+}

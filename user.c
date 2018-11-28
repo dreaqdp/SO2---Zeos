@@ -49,33 +49,29 @@ int __attribute__ ((__section__(".text.main")))
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
     
     
-	runjp();
+	runjp_rank(4,7);
 	while(1);
 	
+	int * volatile iniaddress = sbrk(0);
+	int * volatile finaladdress = sbrk(3);
+	//int * volatile finalfinaladdress = sbrk(-6);
+	*(iniaddress + 1024) = 1; //preguntar: hauria de poder accedir a tota la pagina reservada?Com limitar-li l'acces?
 
-/*
-	int jaja = sem_init(1,0);
+	while(1);
 
-	char Stack[666];
-	int c = clone(&heysocunthread,&Stack[666]);
 
-	//int jiji = sem_signal(1);
 
-	//int jeje = sem_destroy(1);
+	/*
+	char buff [3];
+	read(0, buff, 3);
+	write(1, buff, 3);
 
-	while(1);*/
-    
-/*
-	int fill = fork();
-	if(!fill){
-		char Stack[666];
-		int c = clone(&heysocunthread,&Stack[666]);
-		exit();
-	}
+
 	while(1){
-		write(1,"hola",5);
-	}
-  */
+		write(1,"papi",5);
+	}*/
+	
+
 	return 0;
 
 }

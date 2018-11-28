@@ -12,6 +12,7 @@
 #include <io.h>
 #include <utils.h>
 #include <zeos_mm.h> /* TO BE DELETED WHEN ADDED THE PROCESS MANAGEMENT CODE TO BECOME MULTIPROCESS */
+#include <circbuff.h>
 
 
 int (*usr_main)(void) = (void *) PH_USER_START;
@@ -68,6 +69,12 @@ void setMSR(){
  *   Main entry point to ZEOS Operating System
  */
 
+void init_circbuff(){
+  circbuffptr_last = &keybuffer; 
+  circbuffptr_first = &keybuffer;
+  circbuffcounter = 0;
+}
+
 
 extern union task_union *task; //pointer to task[1] (0 is protected)
  
@@ -109,7 +116,7 @@ struct semaphore{
 };
 struct semaphore sem_array[20];
 
-void init_sempahores(){
+void init_semaphores(){
   for(int i=0; i<20; ++i){
     sem_array[i].counter = 0;
     sem_array[i].owner_pid = -1;
@@ -153,10 +160,12 @@ int __attribute__((__section__(".text.main")))
   init_freequeue();
   init_queue(&readyqueue);
   init_queue(&keyboardqueue);
-  
+
+  /* init circular buffer */
+  init_circbuff();
   /* init semaphores */
 
-  init_sempahores();
+  init_semaphores();
 
   // initialize global PID
   global_PID = 2;

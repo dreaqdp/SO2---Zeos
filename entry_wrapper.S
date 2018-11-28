@@ -396,3 +396,38 @@ fi_read:
 	mov %ebp, %esp
 	pop %ebp
 	ret
+
+ENTRY(sys_sbrk_wrapper)
+	push %ebp
+	mov %esp, %ebp
+	push %ecx
+	push %edx
+	##params
+	push %ebx
+	mov 8(%ebp), %ebx    #increment
+	##
+	lea ret_sbrk, %eax #perque pugui tornar el sysenter
+	push %eax
+	push %ebp #creem un fake dynamic link per facilitarnos la vida
+	movl %esp, %ebp #guardarse el esp per sysenter
+	mov $13, %eax #posar id de la sys table
+	sysenter
+ret_sbrk:
+    pop %ebp
+	add $4, %esp	#borrem el lea de retfork
+	pop %edx
+	pop %ecx
+	cmp $0, %eax
+	jge fi_sbrk
+	not %eax #abs(errror) 
+	inc %eax
+	lea errno, %ebx
+	mov %eax, (%ebx)
+	mov $-1, %eax 
+fi_sbrk:
+	##params
+	pop %ecx
+	#
+	mov %ebp, %esp
+	pop %ebp
+	ret
