@@ -27,7 +27,7 @@ long outer(long n)
 */
 
 extern int errno;
-
+/*
 int heysocunthread(){
 	
 
@@ -39,7 +39,7 @@ int heysocunthread(){
 		//write(1,"thread ",7);
 	//}
 	exit();
-}
+}*/
 
 
 int __attribute__ ((__section__(".text.main")))
@@ -49,7 +49,7 @@ int __attribute__ ((__section__(".text.main")))
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
     
     
-	runjp_rank(4,7);
+	runjp_rank(0,10);
 	while(1);
 	
 	int * volatile iniaddress = sbrk(0);

@@ -26,8 +26,8 @@ extern unsigned int zeos_ticks;
 
 int check_fd(int fd, int permissions)
 {
-  if (fd!=1) return -9; /*EBADF*/
-  if (permissions!=ESCRIPTURA) return -13; /*EACCES*/
+  if ((fd!=1 && permissions == ESCRIPTURA) || (fd != 0 && permissions == LECTURA)) return -9; /*EBADF*/
+  if ((fd == 1 && permissions!=ESCRIPTURA) || (fd == 0 && permissions != LECTURA)) return -13; /*EACCES*/
   return 0;
 }
 
@@ -123,7 +123,7 @@ int sys_fork(){
   list_add_tail(&(child_task->list), &readyqueue);
   child_task->state = ST_READY;
   struct stats newstats = {0, 0, 0, 0, 0, 0, 0};
-  child_task->p_stats = newstats; //preguntar
+  child_task->p_stats = newstats; 
   //retornem el PID del fill
   return PID;
 }
@@ -312,9 +312,8 @@ int sys_get_stats(int pid, struct stats *st){
 
 
 int sys_read(int fd, char *buffer, int count){
-
-  // preguntar: fd closed com ho comprovem? o WRONLY? fd max? test[1], [2], [10] respectivament
-  if (fd < 0 || (fd > 0 && fd <= 2)) return EBADF;
+  int error_fd = check_fd(fd, LECTURA);
+  if (error_fd < 0) return -error_fd;
   if (buffer == NULL) return EFAULT;
   if (count < 0) return EINVAL;
  
