@@ -75,18 +75,28 @@ int sys_fork(){
   //3->agafem les taules de pagines de pare i fill
   page_table_entry * father_tp = get_PT(current());
   page_table_entry * child_tp = get_PT(child_task);
-  //4->inicialitzo les pagines del fill corresponents al codi, mapejantles igual que les del pare
+  //4->inicialitzar les pagines del fill corresponents al codi, mapejantles igual que les del pare
   int i;
   for (i=0;i<NUM_PAG_CODE;++i){
     set_ss_pag(child_tp,PAG_LOG_INIT_CODE + i, get_frame(father_tp, PAG_LOG_INIT_CODE+i));
   } 
-  //5-> inicialitzo les pagines del fill corresponents al kernel, mapejantles igual que les del pare
+  //5-> inicialitzar les pagines del fill corresponents al kernel, mapejantles igual que les del pare
   for (i=0;i<NUM_PAG_KERNEL;++i){
     set_ss_pag(child_tp,i, get_frame(father_tp, i));
   }
+
+  // heap: inizialitzar les pag del fill corresponents al heap, mapejar-les igual que les del pare
+  volatile unsigned int programbreak_page = (unsigned int)current()->programbreak >> 12;
+  for (i = PAG_LOG_INIT_HEAP; i < programbreak_page; i++) {
+    set_ss_pag(child_tp, i, get_frame(father_tp, i));
+  }
+
+
   //6->junt : alloc fisiques dades fill, ini entrades TP de dades fill, temp i copia de les del pare.
-  int allocatedpages[NUM_PAG_DATA]; //vector per poder tirar enrere en cas de ENOMEM
-  for (i=0;i<NUM_PAG_DATA;++i){
+  // heap: alloc tantes pag de heap com tingui el pare
+  int pag_heap = (int) programbreak_page - PAG_LOG_INIT_HEAP + 1;
+  int allocatedpages[NUM_PAG_DATA + pag_heap]; //vector per poder tirar enrere en cas de ENOMEM
+  for (i=0;i<NUM_PAG_DATA + pag_heap;++i){
     //alloquem una frame fisica i la guardem al vector de pagines alocades
     int pagenumber = alloc_frame();
     allocatedpages[i]=pagenumber;
@@ -96,13 +106,15 @@ int sys_fork(){
       return -ENOMEM;
     }
     //inicialitzem una entrada de dades del child mapejada a la nova frame
+    // heap: en teoria tambe serveix aixi pel heap ja que sinicia just a continuació de les de dades
     set_ss_pag(child_tp,PAG_LOG_INIT_DATA+i,pagenumber); 
     //inicialitzem una entrada de dades del pare mapejada a la nova frame per poder escriure coses a la física   
-    set_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA+i,pagenumber);
+    // heap: ha de ser a partir de les pag de heap, sino se les carrega
+    set_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA + pag_heap +i,pagenumber);
     //el copy_data funciona amb @ lògiques (comencen al "0" per cada proces). el <<12 es pq nomes guardem un "tag" de la pag.física
-    copy_data((void*)((PAG_LOG_INIT_DATA + i)<<12), (void*)((PAG_LOG_INIT_DATA+NUM_PAG_DATA+i)<<12), PAGE_SIZE); 
+    copy_data((void*)((PAG_LOG_INIT_DATA + i)<<12), (void*)((PAG_LOG_INIT_DATA+NUM_PAG_DATA + pag_heap +i)<<12), PAGE_SIZE); 
     //borrem les pàgines temporals que hem creat en la TP del pare
-    del_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA+i);
+    del_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA + pag_heap +i);
   }
   //fem flush del TLB del pare
   set_cr3(get_DIR(current()));
@@ -110,8 +122,7 @@ int sys_fork(){
   //Actualitzem el PID del fill
   PID = global_PID++;
   child_task->PID = PID;
-  //Actualizem el kernel_esp del fill, basantme en la transparencia nº52 del tema 4
-  //crec que lo de -18 i -19 era si no miraves que a les transpes posa que utilitzis el ebp i no el esp
+  //Actualizem el kernel_esp del fill, basantnos en la transparencia nº52 del tema 4
   unsigned int ebp_father = get_ebp();
   unsigned int offset = ebp_father - (unsigned int)current();
   unsigned int * stackpointer = (unsigned int *) ( (unsigned int)child_task + offset);
@@ -127,7 +138,7 @@ int sys_fork(){
   //retornem el PID del fill
   return PID;
 }
-
+// TODO: sha de modificar pel sbrk
 int sys_clone(void (*function)(void), void *stack){
   
   int PID=-1;
@@ -233,7 +244,7 @@ int sys_sem_destroy (int n_sem) {
 
 }
 
-
+// TODO: sha de modificar pel sbrk
 void sys_exit() {  
   
   for(int i=0; i<20; ++i){
@@ -309,8 +320,6 @@ int sys_get_stats(int pid, struct stats *st){
 
 }
 
-
-
 int sys_read(int fd, char *buffer, int count){
   int error_fd = check_fd(fd, LECTURA);
   if (error_fd < 0) return -error_fd;
@@ -352,12 +361,9 @@ void sys_read_keyboard(char * buffer, int count){
 
 
 void *sys_sbrk(int increment){
-
-
     unsigned char *endaddress = current()->programbreak + increment;
     // preguntar: fins on arriba el heap? i des de on?
-    if (endaddress < ADDRESS_LOG_INIT_HEAP || endaddress >= TOTAL_PAGES*PAGE_SIZE) return ENOMEM;
-
+    if (((int)endaddress >> 12) < PAG_LOG_INIT_HEAP || ((int)endaddress >> 12) >= TOTAL_PAGES*PAGE_SIZE) return ENOMEM;
 
     page_table_entry * current_tp = get_PT(current());
     unsigned int ini_programbreak_page = (unsigned int)current()->programbreak >> 12; //treiem l'offset
@@ -378,7 +384,7 @@ void *sys_sbrk(int increment){
           for(j=0;j<i;++j) free_frame(allocatedpages[j]);
           return -ENOMEM;
         }
-        set_ss_pag(current_tp,ini_programbreak_page+1+i,pagenumber); 
+        set_ss_pag(current_tp,ini_programbreak_page + 1 + i,pagenumber); 
       }
     }else if(increment<0){
       unsigned int npages = ini_programbreak_page - new_programbreak_page;

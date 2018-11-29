@@ -89,7 +89,7 @@ void init_task1(void)
 	struct list_head *h = list_first(&freequeue);
 	list_del(h);
 	task1 = list_head_to_task_struct(h);
-	task1->programbreak = (unsigned int *)ADDRESS_LOG_INIT_HEAP;
+	task1->programbreak = (unsigned int *)(PAG_LOG_INIT_HEAP << 12);
 	task1->PID = 1;
 	set_quantum(task1,50);
 	task1->p_stats.remaining_ticks = 50;
