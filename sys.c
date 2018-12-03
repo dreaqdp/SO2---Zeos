@@ -362,19 +362,21 @@ void sys_read_keyboard(char * buffer, int count){
 
 void *sys_sbrk(int increment){
     unsigned char *endaddress = current()->programbreak + increment;
-    // preguntar: fins on arriba el heap? i des de on?
-    if (((int)endaddress >> 12) < PAG_LOG_INIT_HEAP || ((int)endaddress >> 12) >= TOTAL_PAGES*PAGE_SIZE) return ENOMEM;
+    if (((int)endaddress >> 12) < PAG_LOG_INIT_HEAP || ((int)endaddress >> 12) > TOTAL_PAGES) return -ENOMEM;
 
     page_table_entry * current_tp = get_PT(current());
-    unsigned int ini_programbreak_page = (unsigned int)current()->programbreak >> 12; //treiem l'offset
-    unsigned int new_programbreak_page = (unsigned int)endaddress >> 12; //treiem l'offset
+    unsigned int ini_programbreak_page = (unsigned int)current()->programbreak >> 12; //agafem la pagina d'inici
+    unsigned int new_programbreak_page = (unsigned int)endaddress >> 12; //agafem pagina final
 
     if(increment>0){
-      volatile unsigned int npages = new_programbreak_page - ini_programbreak_page;
-      if(!((int)current()->programbreak & 0x0FFF)){
-        int pagenumber = alloc_frame();
-        set_ss_pag(current_tp,ini_programbreak_page,pagenumber); 
+      volatile unsigned int npages = new_programbreak_page - ini_programbreak_page; 
+      int tpentry = ini_programbreak_page + 1; //per saber quina entrada de la TP actualitzar. En principi la pàgina
+                                              //on es troba l'inici del sbrk ja esta reservada, per aixo el +1.
+      if(!((int)current()->programbreak & 0x0FFF)) { //si l'inici del sbrk és un inici de pàgina
+        ++npages; //haurem de reservar una pagina mes
+        tpentry--;// i per tant, desfem la suposicio de que ja estava reservada (el +1 anterior)
       }
+      if(!((int)endaddress & 0x0FFF)) --npages; //en cas de que el final conicideixi amb una pagina nova, no cal reservarla
       int allocatedpages[npages];
       for (int i=0; i<npages; ++i){
         int pagenumber = alloc_frame();
@@ -384,7 +386,7 @@ void *sys_sbrk(int increment){
           for(j=0;j<i;++j) free_frame(allocatedpages[j]);
           return -ENOMEM;
         }
-        set_ss_pag(current_tp,ini_programbreak_page + 1 + i,pagenumber); 
+        set_ss_pag(current_tp,tpentry + i,pagenumber); 
       }
     }else if(increment<0){
       unsigned int npages = ini_programbreak_page - new_programbreak_page;
@@ -401,11 +403,10 @@ void *sys_sbrk(int increment){
       set_cr3(get_DIR(current()));
 
     }
-
-
-
+    //hem entes que cal retornar el valor de  programbreak anterior a l'execució de sbrk.
+    char * last_programbreak = current()->programbreak;
     current()->programbreak = endaddress;
-    return (void *)endaddress;
+    return (void *)last_programbreak;
 
 }
 

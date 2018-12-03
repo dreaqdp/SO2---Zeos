@@ -233,13 +233,17 @@ int alloc_frame( void )
 
 void free_user_pages( struct task_struct *task )
 {
- int pag;
- page_table_entry * process_PT =  get_PT(task);
+  int pag;
+  page_table_entry * process_PT =  get_PT(task);
     /* DATA */
- for (pag=0;pag<NUM_PAG_DATA;pag++){
-	 free_frame(process_PT[PAG_LOG_INIT_DATA+pag].bits.pbase_addr);
-         process_PT[PAG_LOG_INIT_DATA+pag].entry = 0;
- }
+  for (pag=0;pag<NUM_PAG_DATA;pag++){
+    free_frame(process_PT[PAG_LOG_INIT_DATA+pag].bits.pbase_addr);
+    process_PT[PAG_LOG_INIT_DATA+pag].entry = 0;
+  }
+  for (pag=PAG_LOG_INIT_HEAP; pag<=(int)current()->programbreak >> 12; pag++){
+    free_frame(process_PT[pag].bits.pbase_addr);
+    process_PT[pag].entry = 0;
+  }
 }
 
 

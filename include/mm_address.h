@@ -14,7 +14,7 @@
 
 //PREGUNTAR ON HEM DE DEFINIR EL HEAP
 #define PAG_LOG_INIT_HEAP (PAG_LOG_INIT_DATA+NUM_PAG_DATA)//<<12)
-#define NUM_PAG_HEAP (TOTAL_PAGES - ADDRESS_LOG_INIT_HEAP) 
+#define NUM_PAG_HEAP (TOTAL_PAGES - PAG_LOG_INIT_HEAP) 
 
 /* Memory distribution */
 /***********************/

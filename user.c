@@ -49,13 +49,16 @@ int __attribute__ ((__section__(".text.main")))
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
     
     
-	runjp_rank(5,6);
+	runjp_rank(0,7);
 	while(1);
 	
-	int * volatile iniaddress = sbrk(0);
- 	int * volatile finaladdress = sbrk(3);
+	//char * volatile iniaddress = sbrk(1458176);
+	//*(iniaddress) = '1';
+ 	//int * volatile finaladdress = sbrk((4096*(1024-256-8-20)));
+
+
 	//int * volatile finalfinaladdress = sbrk(-6);
-	*(iniaddress + 1024) = 1; //preguntar: hauria de poder accedir a tota la pagina reservada?Com limitar-li l'acces?
+	//*(iniaddress + 1024) = 1; //preguntar: hauria de poder accedir a tota la pagina reservada?Com limitar-li l'acces?
 
 	while(1);
 
