@@ -361,13 +361,18 @@ void sys_read_keyboard(char * buffer, int count){
 
 
 void *sys_sbrk(int increment){
+    
+
+    volatile int x = free_pages();
+
+
     unsigned char *endaddress = current()->programbreak + increment;
-    if (((int)endaddress >> 12) < PAG_LOG_INIT_HEAP || ((int)endaddress >> 12) > TOTAL_PAGES) return -ENOMEM;
+    if (increment>=0&&(((int)endaddress >> 12) < PAG_LOG_INIT_HEAP || ((int)endaddress >> 12) > TOTAL_PAGES)) return -ENOMEM;
 
     page_table_entry * current_tp = get_PT(current());
     unsigned int ini_programbreak_page = (unsigned int)current()->programbreak >> 12; //agafem la pagina d'inici
     unsigned int new_programbreak_page = (unsigned int)endaddress >> 12; //agafem pagina final
-
+    
     if(increment>0){
       volatile unsigned int npages = new_programbreak_page - ini_programbreak_page; 
       int tpentry = ini_programbreak_page + 1; //per saber quina entrada de la TP actualitzar. En principi la pàgina
@@ -384,20 +389,24 @@ void *sys_sbrk(int increment){
         if (pagenumber<0) {
           int j;
           for(j=0;j<i;++j) free_frame(allocatedpages[j]);
+          set_cr3(get_DIR(current())); //ei pablo i andrea de dema, pregunteuli aixo al juanjo
           return -ENOMEM;
         }
         set_ss_pag(current_tp,tpentry + i,pagenumber); 
       }
     }else if(increment<0){
-      unsigned int npages = ini_programbreak_page - new_programbreak_page;
+      if (new_programbreak_page<PAG_LOG_INIT_HEAP){
+        new_programbreak_page=PAG_LOG_INIT_HEAP;
+      } 
+      volatile unsigned int npages = ini_programbreak_page - new_programbreak_page;
       int i;
       for (i = 0; i < npages; i++) {
-        free_frame(ini_programbreak_page - i);
+        free_frame(get_frame(current_tp,ini_programbreak_page - i));
         del_ss_pag(current_tp,ini_programbreak_page - i);
       }
 
       if (!((int)endaddress & 0x0FFF)) {
-        free_frame(new_programbreak_page);
+        free_frame(get_frame(current_tp,new_programbreak_page));
         del_ss_pag(current_tp,new_programbreak_page);
       }
       set_cr3(get_DIR(current()));

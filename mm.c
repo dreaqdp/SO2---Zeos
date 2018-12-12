@@ -214,6 +214,23 @@ int init_frames( void )
     return 0;
 }
 
+
+int free_pages( void ){
+    
+    int i,n;
+    for (i=NUM_PAG_KERNEL; i<TOTAL_PAGES;++i) {
+        if (phys_mem[i] == FREE_FRAME) {
+            ++n;
+        }
+    }
+    return n;
+
+
+}
+
+
+
+
 /* alloc_frame - Search a free physical page (== frame) and mark it as USED_FRAME. 
  * Returns the frame number or -1 if there isn't any frame available. */
 int alloc_frame( void )

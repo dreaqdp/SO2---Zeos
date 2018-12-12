@@ -40,6 +40,8 @@ inner_task_switch:
 	add $8, %esp
 	
 	#setcr3
+		#dir new =? dir old
+	#cmpl 4(%ebx), 
 	push 4(%ebx) #pointer de dir_page
 	call set_cr3
 	add $4, %esp

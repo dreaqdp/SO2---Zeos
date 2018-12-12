@@ -49,6 +49,7 @@ int __attribute__ ((__section__(".text.main")))
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
     
     
+	
 	runjp_rank(0,7);
 	while(1);
 	
@@ -56,11 +57,30 @@ int __attribute__ ((__section__(".text.main")))
 	//*(iniaddress) = '1';
  	//int * volatile finaladdress = sbrk((4096*(1024-256-8-20)));
 
+	int * volatile maincra = sbrk(10);
+	int * volatile nite4 = sbrk(-100000000);
+	*(maincra)=0xdead;
 
+	while(1);
+
+	volatile unsigned int reservat = 0;
+	int * volatile jujujyjy = sbrk(0);
+	while(sbrk(4096)!=-1){
+		++reservat;
+	}
+	int * volatile jejejaja = sbrk(-(reservat+1)*4096);
+	int * volatile jijijojo = sbrk(0);
+	reservat=0;
+	while(sbrk(4096)!=-1){
+		++reservat;
+	}
+	int * volatile jjjj = sbrk(0);
 	//int * volatile finalfinaladdress = sbrk(-6);
 	//*(iniaddress + 1024) = 1; //preguntar: hauria de poder accedir a tota la pagina reservada?Com limitar-li l'acces?
 
-	while(1);
+	while(1){
+		write(1,"papi",5);
+	}
 
 
 
