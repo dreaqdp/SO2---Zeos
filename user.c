@@ -27,10 +27,10 @@ long outer(long n)
 */
 
 extern int errno;
-/*
+
 int heysocunthread(){
 	
-
+	while(1);
 	int juju = sem_wait(1);
 
 	write(1,"thread ",7);
@@ -39,7 +39,7 @@ int heysocunthread(){
 		//write(1,"thread ",7);
 	//}
 	exit();
-}*/
+}
 
 
 int __attribute__ ((__section__(".text.main")))
@@ -49,9 +49,14 @@ int __attribute__ ((__section__(".text.main")))
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
     
     
-	
-	runjp_rank(0,7);
-	while(1);
+    char pila[666];
+    int lala = clone(&heysocunthread,&pila);
+    while(1);
+
+
+	//runjp();
+	//runjp_rank(0,5);
+	//while(1);
 	
 	//char * volatile iniaddress = sbrk(1458176);
 	//*(iniaddress) = '1';

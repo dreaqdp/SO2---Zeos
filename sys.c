@@ -86,15 +86,15 @@ int sys_fork(){
   }
 
   // heap: inizialitzar les pag del fill corresponents al heap, mapejar-les igual que les del pare
-  volatile unsigned int programbreak_page = (unsigned int)current()->programbreak >> 12;
-  for (i = PAG_LOG_INIT_HEAP; i < programbreak_page; i++) {
+  volatile unsigned int programbreak_page = (unsigned int)(current()->programbreak-1) >> 12;
+  for (i = PAG_LOG_INIT_HEAP; i <= programbreak_page; i++) {
     set_ss_pag(child_tp, i, get_frame(father_tp, i));
   }
 
 
   //6->junt : alloc fisiques dades fill, ini entrades TP de dades fill, temp i copia de les del pare.
   // heap: alloc tantes pag de heap com tingui el pare
-  int pag_heap = (int) programbreak_page - PAG_LOG_INIT_HEAP + 1;
+  int pag_heap = (int)programbreak_page - PAG_LOG_INIT_HEAP + 1;
   int allocatedpages[NUM_PAG_DATA + pag_heap]; //vector per poder tirar enrere en cas de ENOMEM
   for (i=0;i<NUM_PAG_DATA + pag_heap;++i){
     //alloquem una frame fisica i la guardem al vector de pagines alocades

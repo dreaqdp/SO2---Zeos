@@ -39,17 +39,21 @@ inner_task_switch:
 	call writeMSR
 	add $8, %esp
 	
+	#guardar ebp (ho hem mogut adalt del cr3 per el cas dels threads)
+	mov %ebp, %ecx
+	and $0xFFF000,%ecx
+	mov %ebp, 16(%ecx)
+
 	#setcr3
+	mov 4(%ecx),%edi #els threads no han de fer un canvi de directori si abans estava el mateix dir
 		#dir new =? dir old
-	#cmpl 4(%ebx), 
+	cmpl 4(%ebx),%edi
+	je etiqueta
 	push 4(%ebx) #pointer de dir_page
 	call set_cr3
 	add $4, %esp
 	
-	#3)
-	mov %ebp, %ecx
-	and $0xFFF000,%ecx
-	mov %ebp, 16(%ecx)
+
 	#mov %esp, 16(%ecx)
 	#4)
 etiqueta:
