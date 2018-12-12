@@ -54,7 +54,7 @@ inner_task_switch:
  mov %ebp, 16(%ecx)
 
  #setcr3
- mov 4(%ecx),%edi
+ mov 4(%ecx),%edi #els threads no han de fer un canvi de directori si abans estava el mateix dir
   #dir new =? dir old
  cmpl 4(%ebx),%edi
  je etiqueta

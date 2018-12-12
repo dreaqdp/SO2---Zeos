@@ -26,6 +26,7 @@ struct task_struct {
   struct stats p_stats;
   char semdestroyed;
   unsigned char * programbreak;
+  int pos_in_dir_counter;
 };
 
 union task_union {

@@ -40,15 +40,25 @@ page_table_entry * get_PT (struct task_struct *t)
 }
 
 
+
 extern int dir_counter[NR_TASKS];
 int allocate_DIR(struct task_struct *t) 
 {
-	int pos;
+	for(int i=0; i<NR_TASKS; ++i){
+		if(!dir_counter[i]){
+			dir_counter[i]=1;
+			t->dir_pages_baseAddr = (page_table_entry*) &dir_pages[i]; 
+			t->pos_in_dir_counter=i;
+			return 1;
+		}
+	}
 
+/*
+	int pos;
 	pos = ((int)t-(int)task)/sizeof(union task_union);
 	dir_counter[pos]=1;
 	t->dir_pages_baseAddr = (page_table_entry*) &dir_pages[pos]; 
-
+*/
 	return 1;
 }
 extern struct task_struct * task1;
@@ -71,7 +81,6 @@ void init_idle (void)
 	struct list_head *h = list_first(&freequeue);
 	list_del(h);
 	idle_task = list_head_to_task_struct(h);
-
 	idle_task->PID = 0;
 	idle_task->semdestroyed = 0;
 	set_quantum(idle_task,50);

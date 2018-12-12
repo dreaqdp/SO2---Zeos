@@ -49,14 +49,9 @@ int __attribute__ ((__section__(".text.main")))
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
     
     
-    char pila[666];
-    int lala = clone(&heysocunthread,&pila);
-    while(1);
-
-
-	//runjp();
+	runjp();
 	//runjp_rank(0,5);
-	//while(1);
+	while(1);
 	
 	//char * volatile iniaddress = sbrk(1458176);
 	//*(iniaddress) = '1';

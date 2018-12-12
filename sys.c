@@ -151,7 +151,7 @@ int sys_clone(void (*function)(void), void *stack){
   struct task_struct* thread_task = list_head_to_task_struct(h);
   copy_data((void *)current(), (void *)thread_task, (int)sizeof(union task_union));
 
-  dir_counter[((int)current()-(int)task)/sizeof(union task_union)]++;
+  dir_counter[current()->pos_in_dir_counter]++;
 
   PID = global_PID++;
   thread_task->PID = PID;
