@@ -1,10 +1,12 @@
 #include<circbuff.h>
 
 void circbuff_push(char k){
-  *circbuffptr_last = k;
-  circbuffptr_last = (circbuffptr_last+1);
-  if (circbuffptr_last >= &keybuffer[666]) circbuffptr_last=&keybuffer[0];
-  ++circbuffcounter;
+  if(!circbuff_full()){
+    *circbuffptr_last = k;
+    circbuffptr_last = (circbuffptr_last+1);
+    if (circbuffptr_last >= &keybuffer[CIRCBUFF_SIZE]) circbuffptr_last=&keybuffer[0];
+    ++circbuffcounter;
+  }
 }
 
 char circbuff_front(){
@@ -12,9 +14,11 @@ char circbuff_front(){
 }
 
 void circbuff_pop(){
+  if(!circbuff_empty()){
   circbuffptr_first = circbuffptr_first+1;
-  if (circbuffptr_first >= &keybuffer[666]) circbuffptr_first=&keybuffer[0];
+  if (circbuffptr_first >= &keybuffer[CIRCBUFF_SIZE]) circbuffptr_first=&keybuffer[0];
   --circbuffcounter;
+  }
 }
 
 char circbuff_empty(){

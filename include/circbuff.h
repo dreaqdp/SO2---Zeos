@@ -1,4 +1,5 @@
-char keybuffer[666];
+#define CIRCBUFF_SIZE 666
+char keybuffer[CIRCBUFF_SIZE];
 char *circbuffptr_last; 
 char *circbuffptr_first;
 int circbuffcounter;

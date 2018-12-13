@@ -105,6 +105,9 @@ int sys_fork(){
       for(j=0;j<i;++j) free_frame(allocatedpages[j]);
       return -ENOMEM;
     }
+  }
+  for (i=0;i<NUM_PAG_DATA + pag_heap;++i){
+    int pagenumber = allocatedpages[i];
     //inicialitzem una entrada de dades del child mapejada a la nova frame
     // heap: en teoria tambe serveix aixi pel heap ja que sinicia just a continuació de les de dades
     set_ss_pag(child_tp,PAG_LOG_INIT_DATA+i,pagenumber); 
@@ -116,6 +119,7 @@ int sys_fork(){
     //borrem les pàgines temporals que hem creat en la TP del pare
     del_ss_pag(father_tp,PAG_LOG_INIT_DATA+NUM_PAG_DATA + pag_heap +i);
   }
+
   //fem flush del TLB del pare
   set_cr3(get_DIR(current()));
 
@@ -372,7 +376,7 @@ void *sys_sbrk(int increment){
     page_table_entry * current_tp = get_PT(current());
     unsigned int ini_programbreak_page = (unsigned int)current()->programbreak >> 12; //agafem la pagina d'inici
     unsigned int new_programbreak_page = (unsigned int)endaddress >> 12; //agafem pagina final
-    
+    char belowheap = 0;
     if(increment>0){
       volatile unsigned int npages = new_programbreak_page - ini_programbreak_page; 
       int tpentry = ini_programbreak_page + 1; //per saber quina entrada de la TP actualitzar. En principi la pàgina
@@ -389,14 +393,18 @@ void *sys_sbrk(int increment){
         if (pagenumber<0) {
           int j;
           for(j=0;j<i;++j) free_frame(allocatedpages[j]);
-          set_cr3(get_DIR(current())); //ei pablo i andrea de dema, pregunteuli aixo al juanjo
           return -ENOMEM;
         }
-        set_ss_pag(current_tp,tpentry + i,pagenumber); 
+        
       }
+      for (int i=0; i<npages; ++i){
+        set_ss_pag(current_tp,tpentry + i,allocatedpages[i]); 
+      }
+
     }else if(increment<0){
       if (new_programbreak_page<PAG_LOG_INIT_HEAP){
         new_programbreak_page=PAG_LOG_INIT_HEAP;
+        belowheap=1;
       } 
       volatile unsigned int npages = ini_programbreak_page - new_programbreak_page;
       int i;
@@ -414,7 +422,8 @@ void *sys_sbrk(int increment){
     }
     //hem entes que cal retornar el valor de  programbreak anterior a l'execució de sbrk.
     char * last_programbreak = current()->programbreak;
-    current()->programbreak = endaddress;
+    if(belowheap) current()->programbreak = PAG_LOG_INIT_HEAP<<12;
+    else current()->programbreak = endaddress;
     return (void *)last_programbreak;
 
 }
