@@ -1,0 +1,490 @@
+bochsout.txt:00000000000i[      ]   x86-64 support: no
+bochsout.txt:00000000000i[MEM0  ] rom at 0xfffe0000/131072 ('/opt/bochs_gdb/share/bochs/BIOS-bochs-latest')
+bochsout.txt:00000000000i[DEV   ] PIIX3 PCI-to-ISA bridge present at device 1, function 0
+bochsout.txt:00000000000i[MEM0  ] Register memory access handlers: 0x0000000a0000 - 0x0000000bffff
+bochsout.txt:00000000000i[MEM0  ] Register memory access handlers: 0x0000e0000000 - 0x0000e0ffffff
+bochsout.txt:00000000000i[MEM0  ] rom at 0xc0000/41472 ('/opt/bochs_gdb/share/bochs/VGABIOS-lgpl-latest')
+bochsout.txt:00000000000i[MEM0  ] Register memory access handlers: 0x0000fec00000 - 0x0000fec00fff
+bochsout.txt:00000004661i[BIOS  ] $Revision: 12412 $ $Date: 2014-07-10 09:28:59 +0200 (Do, 10. Jul 2014) $
+bochsout.txt:00000318049i[KBD   ] reset-disable command received
+bochsout.txt:00001045839i[PIDE  ] new BM-DMA address: 0xc000
+bochsout.txt:00388548000i[CPU0  ] 0x0010001f>> jmp .-2 (0x0010001f) : EBFE
+Binary file bootsect matches
+Binary file bootsect.o matches
+bootsect.s:# 1 "<built-in>"
+bootsect.s:# 1 "<command-line>"
+bootsect.s:# 31 "<command-line>"
+bootsect.s:# 1 "/usr/include/stdc-predef.h" 1 3 4
+bootsect.s:# 17 "/usr/include/stdc-predef.h" 3 4
+bootsect.s:# 32 "<command-line>" 2
+bootsect.s:SETUPSECS = 0			! default nr of setup-sectors
+bootsect.s:BOOTSEG   = 0x07C0		! original address of boot-sector
+bootsect.s:INITSEG   = 0x9000		! final address of boot-sector
+bootsect.s:SYSSEG    = 0x1000		! kernel (protected-mode) address
+bootsect.s:go:	mov	di,#0x4000-12	! 0x4000 is arbitrary value >= length of
+bootsect.s:	mov	ss,ax		! put stack at INITSEG:0x4000-12.
+bootsect.s:! well, that went ok, I hope. Now we have to reprogram the interrupts :-(
+bootsect.s:! we put them right after the intel-reserved hardware interrupts, at
+bootsect.s:! int 0x20-0x2F. There they won't mess up anything. Sadly IBM really
+bootsect.s:! rectify it afterwards. Thus the bios puts interrupts at 0x08-0x0f,
+bootsect.s:	out	#0x20,al	! send it to 8259A-1
+bootsect.s:	out	#0xA0,al	! and to 8259A-2
+bootsect.s:	mov	al,#0x04	! 8259-1 is master
+bootsect.s:	mov	al,#0x02	! 8259-2 is slave
+bootsect.s:! things as simple as possible, we do no register set-up or anything,
+bootsect.s:! we let the GNU-compiled 32-bit programs do that. We just jump to
+bootsect.s:! in 32-bit protected mode.
+bootsect.s:	mov	cr0,eax		! a partir del 1 aix�ja � possible fer-ho
+bootsect.s:! Well, that certainly wasn't fun :-(. Hopefully it works, and we don't
+bootsect.s:! need no steenking BIOS anyway (except for the initial loading :-).
+bootsect.s:!	Manual, Mixing 16-bit and 32-bit code, page 16-6)
+bootsect.s:	db	0x66,0xea	! prefix + jmpi-opcode
+bootsect.s:! in:	es - starting address segment (normally 0x1000)
+bootsect.s:	jnz	empty_8042_loop	! yes - loop
+bootsect.s:  .word  0xFFFF           ! 4Gb - (0x100000*0x1000 = 4Gb)
+bootsect.s:  .word  0xFFFF           ! 4Gb - (0x100000*0x1000 = 4Gb)
+bootsect.s:  .word  0xFFFF           ! 4Gb - (0x100000*0x1000 = 4Gb)
+bootsect.s:  .word  0xFFFF           ! 4Gb - (0x100000*0x1000 = 4Gb)
+bootsect.S:SETUPSECS = 0			! default nr of setup-sectors
+bootsect.S:BOOTSEG   = 0x07C0		! original address of boot-sector
+bootsect.S:INITSEG   = 0x9000		! final address of boot-sector
+bootsect.S:SYSSEG    = 0x1000		! kernel (protected-mode) address
+bootsect.S:go:	mov	di,#0x4000-12	! 0x4000 is arbitrary value >= length of
+bootsect.S:	mov	ss,ax		! put stack at INITSEG:0x4000-12.
+bootsect.S:! well, that went ok, I hope. Now we have to reprogram the interrupts :-(
+bootsect.S:! we put them right after the intel-reserved hardware interrupts, at
+bootsect.S:! int 0x20-0x2F. There they won't mess up anything. Sadly IBM really
+bootsect.S:! rectify it afterwards. Thus the bios puts interrupts at 0x08-0x0f,
+bootsect.S:	out	#0x20,al	! send it to 8259A-1
+bootsect.S:	out	#0xA0,al	! and to 8259A-2
+bootsect.S:	mov	al,#0x04	! 8259-1 is master
+bootsect.S:	mov	al,#0x02	! 8259-2 is slave
+bootsect.S:! things as simple as possible, we do no register set-up or anything,
+bootsect.S:! we let the GNU-compiled 32-bit programs do that. We just jump to
+bootsect.S:! in 32-bit protected mode.
+bootsect.S:	mov	cr0,eax		! a partir del i386 aix�ja � possible fer-ho
+bootsect.S:! Well, that certainly wasn't fun :-(. Hopefully it works, and we don't
+bootsect.S:! need no steenking BIOS anyway (except for the initial loading :-).
+bootsect.S:!	Manual, Mixing 16-bit and 32-bit code, page 16-6)
+bootsect.S:	db	0x66,0xea	! prefix + jmpi-opcode
+bootsect.S:! in:	es - starting address segment (normally 0x1000)
+bootsect.S:	jnz	empty_8042_loop	! yes - loop
+bootsect.S:  .word  0xFFFF           ! 4Gb - (0x100000*0x1000 = 4Gb)
+bootsect.S:  .word  0xFFFF           ! 4Gb - (0x100000*0x1000 = 4Gb)
+bootsect.S:  .word  0xFFFF           ! 4Gb - (0x100000*0x1000 = 4Gb)
+bootsect.S:  .word  0xFFFF           ! 4Gb - (0x100000*0x1000 = 4Gb)
+Binary file build matches
+build.c: *  $Id: build.c,v 1.1.1.1 2006-09-04 15:05:34 jcosta Exp $
+build.c: * This file builds a disk-image from three different files:
+build.c: * - bootsect: exactly 512 bytes of 8086 machine code, loads the rest
+build.c: * - setup: 8086 machine code, sets up system parm
+build.c: * - system: 80386 code for actual system
+build.c:		die("%s: Non-Minix header", name);
+build.c:		sz -= l;
+build.c:		uz -= l;
+circbuff.c:  --circbuffcounter;
+Binary file circbuff.o matches
+Binary file devices.o matches
+Binary file E3/libjpclone.a matches
+E3/README.txt:* README_E3.txt: this file specifies the pre-requisites for each test.
+E3/README.txt:		$ ln -s libjpsemaphores.a libjp.a
+E3/README.txt:		LIBZEOS= -L. -l zeos -l auxjp
+Binary file E3/libjpsemaphores.a matches
+Binary file E4/libjpread.a matches
+E4/README.txt:* README_E4.txt: this file specifies the pre-requisites for each test.
+E4/README.txt:		$ ln -s libjpread.a libjp.a
+E4/README.txt:		LIBZEOS= -L. -l zeos -l auxjp
+Binary file E4/libjpsbrk.a matches
+E4/README_E4.txt:Test[6]: [testsbrk8] SBRK(-max): write
+Binary file entry.o matches
+entry.s:# 1 "<built-in>"
+entry.s:# 1 "<command-line>"
+entry.s:# 31 "<command-line>"
+entry.s:# 1 "/usr/include/stdc-predef.h" 1 3 4
+entry.s:# 32 "<command-line>" 2
+entry.s:# movl $-38, %EAX
+entry.s: movl $-38, %EAX
+entry.S: * entry.S - Entry point to system mode from user mode
+entry.S:/**   0(%esp) - %ebx    \                        **/
+entry.S:/**   4(%esp) - %ecx     |                       **/
+entry.S:/**   8(%esp) - %edx     |                       **/
+entry.S:/**   C(%esp) - %esi     | Register saved        **/
+entry.S:/**  10(%esp) - %edi     |  by 'save'            **/
+entry.S:/**  14(%esp) - %ebp     |                       **/
+entry.S:/**  18(%esp) - %eax     |                       **/
+entry.S:/**  1C(%esp) - %ds      |                       **/
+entry.S:/**  20(%esp) - %es      |                       **/
+entry.S:/**  24(%esp) - %fs      |                       **/
+entry.S:/**  28(%esp) - %gs     /                        **/
+entry.S:/**  2C(%esp) - %eip    \                        **/
+entry.S:/**  30(%esp) - %cs      |                       **/
+entry.S:/**  34(%esp) - %eflags  |  Return context saved **/
+entry.S:/**  38(%esp) - %oldesp  |   by the processor.   **/
+entry.S:/**  3C(%esp) - %oldss  /                        **/
+entry.S:#	movl $-38, %EAX
+entry.S:	movl $-38, %EAX
+entry_wrapper.s:# 1 "<built-in>"
+entry_wrapper.s:# 1 "<command-line>"
+entry_wrapper.s:# 31 "<command-line>"
+entry_wrapper.s:# 1 "/usr/include/stdc-predef.h" 1 3 4
+entry_wrapper.s:# 32 "<command-line>" 2
+entry_wrapper.s: #feedback e1c: guardar reg-param
+entry_wrapper.s: mov $-1, %eax
+entry_wrapper.s: mov $-1, %eax
+entry_wrapper.s: mov $-1, %eax
+entry_wrapper.s: mov $-1, %eax
+entry_wrapper.s: mov $-1, %eax
+entry_wrapper.s: mov $-1, %eax
+entry_wrapper.s: mov $-1, %eax
+entry_wrapper.s: mov $-1, %eax
+entry_wrapper.s: #feedback e1c: guardar reg-param
+entry_wrapper.s: mov $-1, %eax
+entry_wrapper.s: mov $-1, %eax
+entry_wrapper.S:	#feedback e1c: guardar reg-param
+entry_wrapper.S:	mov $-1, %eax 
+entry_wrapper.S:	mov $-1, %eax 
+entry_wrapper.S:	mov $-1, %eax 
+entry_wrapper.S:	mov $-1, %eax 
+entry_wrapper.S:	mov $-1, %eax 
+entry_wrapper.S:	mov $-1, %eax 
+entry_wrapper.S:	mov $-1, %eax 
+entry_wrapper.S:	mov $-1, %eax 
+entry_wrapper.S:	#feedback e1c: guardar reg-param
+entry_wrapper.S:	mov $-1, %eax 
+entry_wrapper.S:	mov $-1, %eax 
+generate_gdbcmd_file.sh:TEXT=$(readelf -R .text user|grep 0x|head -1|cut -d' ' -f3)
+hardware.c: *   x = 0 -> enabled
+hardware.c: *   x = 1 -> disabled
+hardware.c:  : "i" (0xfc)       /* 0xFF = 11111111 -> all bits disabled */
+Binary file hardware.o matches
+include/mm.h: * mm.h - Capçalera del mòdul de gestió de memòria
+include/stats.h:  unsigned long total_trans; /* Number of times the process has got the CPU: READY->RUN transitions */
+Binary file include/asm.h matches
+include/segment.h: * segment.h - Constants de segment per a les entrades de la GDT
+include/mm_address.h:#define NUM_PAG_HEAP (TOTAL_PAGES - PAG_LOG_INIT_HEAP) 
+include/mm_address.h:#define USER_ESP	L_USER_START+(NUM_PAG_CODE+NUM_PAG_DATA)*0x1000-16
+include/hardware.h: * hardware.h - Rutines hardware per manegar els accesos a baix nivell
+include/hardware.h: *   x = 0 -> activada
+include/hardware.h: *   x = 1 -> no activada
+include/sched.h: * sched.h - Estructures i macros pel tractament de processos
+include/sched.h:#define KERNEL_ESP(t)       	(DWord) &(t)->stack[KERNEL_STACK_SIZE]
+include/io.h: * io.h - Definició de l'entrada/sortida per pantalla en mode sistema
+include/libc.h: * libc.h - macros per fer els traps amb diferents arguments
+include/entry.h: * entry.h - Definició del punt d'entrada de les crides al sistema
+include/system.h: * system.h - Capçalera del mòdul principal del sistema operatiu
+include/errno.h:#define EXDEV           18      /* Cross-device link */
+include/errno.h:#define EROFS           30      /* Read-only file system */
+include/errno.h:#define ENOTSOCK        88      /* Socket operation on non-socket */
+include/types.h: * types.h - Definició de tipus i estructures de dades
+include/types.h:} Descriptor;     /* R1: pg. 3-11, 4-3 */
+include/types.h:} Gate;     /* R1: pg. 5-11 */
+include/types.h:  Word  PreviousTaskLink;   /* 0          R1: pg. 6-5  */
+include/types.h:  Word  ss1;                /* 16 |-    for each       */
+include/types.h:  DWord edi;                /* 68 |- Saved registers   */
+include/types.h:/*  /--------------------------------------\  */
+include/types.h:/*  \--------------------------------------/  */
+include/types.h:/*                             R1: pg. 2-10   */
+include/types.h:/*  /--------------------------------------\           */
+include/types.h:/*  \--------------------------------------/           */
+include/types.h:/*  TI    = 0 -> GDT ; 1 -> LDT                        */
+include/types.h:/*  RPL   = Requestor Privilege Level     R1: pg. 3-9  */
+include/types.h:/*** THE EFLAGS ****************************************** R1: pg. 2-8 ****/
+include/types.h:/**   -----------------------------------------------------------------  **/
+include/types.h:/**   -----------------------------------------------------------------  **/
+include/interrupt.h: * interrupt.h - Definició de les diferents rutines de tractament d'exepcions
+include/list.h: * INIT_LIST_HEAD - Initializes an empty list.
+include/list.h: * list_add - add a new entry
+include/list.h: * list_add_tail - add a new entry
+include/list.h: * list_del - deletes entry from list.
+include/list.h: * list_is_last - tests whether @list is the last entry in list @head
+include/list.h: * list_empty - tests whether a list is empty
+include/list.h: * list_entry - get the struct for this entry
+include/list.h:            ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+include/list.h: * list_for_each	-	iterate over a list
+include/list.h:	for (pos = (head)->next; pos != (head); pos = pos->next)
+include/list.h: * list_for_each_safe   -       iterate over a list safe against removal of list entry
+include/list.h:        for (pos = (head)->next, n = pos->next; pos != (head); \
+include/list.h:                pos = n, n = pos->next)
+include/list.h: * list_first   -   returns the first list item
+include/list.h:         (head)->next
+interrupt.c: * interrupt.c -
+interrupt.c:  'b','n','m',',','.','-','\0','*',
+interrupt.c:  '8','9','-','4','5','6','+','1',
+interrupt.c:  /* THE INTERRUPTION GATE FLAGS:                          R1: pg. 5-11  */
+interrupt.c:  /* THE TRAP GATE FLAGS:                                  R1: pg. 5-11  */
+interrupt.c:     the system calls will be thread-safe. */
+interrupt.c:  idtR.limit = IDT_ENTRIES * sizeof(Gate) - 1;
+interrupt.c:        int remaining = keyboard_readers_count[((int)keyboard_reader-(int)task)/sizeof(union task_union)];
+interrupt.c:          keyboard_readers_count[((int)keyboard_reader-(int)task)/sizeof(union task_union)] = remaining-circbuff_count();
+interrupt.c:          keyboard_reader->state = ST_READY;
+interrupt.c:          list_add(&(keyboard_reader->list), &readyqueue);
+Binary file interrupt.o matches
+io.c: * io.c - 
+Binary file io.o matches
+Kernel.s:# 1 "<built-in>"
+Kernel.s:# 1 "<command-line>"
+Kernel.s:# 31 "<command-line>"
+Kernel.s:# 1 "/usr/include/stdc-predef.h" 1 3 4
+Kernel.s:# 32 "<command-line>" 2
+Binary file libauxjp.a matches
+libc.c:    b[i1]=b[i-i1-1];
+libc.c:    b[i-i1-1]=c;
+Binary file libc.o matches
+Binary file libjp.a matches
+Binary file libzeos.a matches
+list.c:	list->next = list;
+list.c:	list->prev = list;
+list.c:	next->prev = new;
+list.c:	new->next = next;
+list.c:	new->prev = prev;
+list.c:	prev->next = new;
+list.c: * list_add - add a new entry
+list.c:	__list_add(new, head, head->next);
+list.c: * list_add_tail - add a new entry
+list.c:	__list_add(new, head->prev, head);
+list.c:	next->prev = prev;
+list.c:	prev->next = next;
+list.c: * list_del - deletes entry from list.
+list.c:	__list_del(entry->prev, entry->next);
+list.c:	entry->next = (void*) 0;
+list.c:	entry->prev = (void*) 0;
+list.c: * list_is_last - tests whether @list is the last entry in list @head
+list.c:	return list->next == head;
+list.c: * list_empty - tests whether a list is empty
+list.c:	return head->next == head;
+Binary file list.o matches
+Makefile:AS86	= as86 -0 -a
+Makefile:LD86	= ld86 -0
+Makefile:HOSTCFLAGS = -Wall -Wstrict-prototypes -g
+Makefile:CC      = gcc -m32
+Makefile:AS      = as --32
+Makefile:LD      = ld -melf_i386
+Makefile:OBJCOPY = objcopy -O binary -R .note -R .comment -S
+Makefile:CFLAGS = -O2  -g $(JP) -fno-omit-frame-pointer -ffreestanding -Wall -I$(INCLUDEDIR)
+Makefile:ASMFLAGS = -I$(INCLUDEDIR)
+Makefile:SYSLDFLAGS = -T system.lds
+Makefile:USRLDFLAGS = -T user.lds
+Makefile:LINKFLAGS = -g
+Makefile:LIBZEOS = -L . -l zeos -l auxjp
+Makefile:	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
+Makefile:	$(LD86) -s -o $@ $<
+Makefile:	$(AS86) -o $@ $<
+Makefile:	$(CPP) $(ASMFLAGS) -traditional $< -o $@
+Makefile:	$(CPP) $(ASMFLAGS) -o $@ $<
+Makefile:	$(CPP) $(ASMFLAGS) -o $@ $<
+Makefile:	$(CPP) $(ASMFLAGS) -o $@ $<
+Makefile:	$(CPP) $(ASMFLAGS) -o $@ $<
+Makefile:	$(CPP) $(ASMFLAGS) -o $@ $<
+Makefile:	$(LD) $(LINKFLAGS) $(SYSLDFLAGS) -o $@ $< $(SYSOBJ) $(LIBZEOS) 
+Makefile:	$(LD) $(LINKFLAGS) $(USRLDFLAGS) -o $@ $< $(USROBJ)
+Makefile:	rm -f *.o *.s bochsout.txt parport.out system.out system bootsect zeos.bin user user.out *~ build 
+Makefile:	bochs -q -f .bochsrc
+Makefile:	bochs -q -f .bochsrc_gdb &
+Makefile:	gdb -x .gdbcmd system
+Makefile:	bochs_nogdb -q -f .bochsrc
+mm.c: * mm.c - Memory Management: Paging & segment memory management
+mm.c:/* alloc_frame - Search a free physical page (== frame) and mark it as USED_FRAME. 
+mm.c: * Returns the frame number or -1 if there isn't any frame available. */
+mm.c:    return -1;
+mm.c:  for (pag=PAG_LOG_INIT_HEAP; pag<=(int)current()->programbreak >> 12; pag++){
+mm.c:/* free_frame - Mark as FREE_FRAME the frame  'frame'.*/
+mm.c:/* set_ss_pag - Associates logical page 'page' with physical page 'frame' */
+mm.c:/* del_ss_pag - Removes mapping from logical page 'logical_page' */
+mm.c:/* get_frame - Returns the physical frame associated to page 'logical_page' */
+Binary file mm.o matches
+restore.S: * restore.S - Entry point to system mode from user mode
+restore.S:/**   0(%esp) - %ebx    \                        **/
+restore.S:/**   4(%esp) - %ecx     |                       **/
+restore.S:/**   8(%esp) - %edx     |                       **/
+restore.S:/**   C(%esp) - %esi     | Register saved        **/
+restore.S:/**  10(%esp) - %edi     |  by 'save'            **/
+restore.S:/**  14(%esp) - %ebp     |                       **/
+restore.S:/**  18(%esp) - %eax     |                       **/
+restore.S:/**  1C(%esp) - %ds      |                       **/
+restore.S:/**  20(%esp) - %es      |                       **/
+restore.S:/**  24(%esp) - %fs      |                       **/
+restore.S:/**  28(%esp) - %gs     /                        **/
+restore.S:/**  2C(%esp) - %eip    \                        **/
+restore.S:/**  30(%esp) - %cs      |                       **/
+restore.S:/**  34(%esp) - %eflags  |  Return context saved **/
+restore.S:/**  38(%esp) - %oldesp  |   by the processor.   **/
+restore.S:/**  3C(%esp) - %oldss  /                        **/
+sched.c: * sched.c - initializes struct for task 0 anda task 1
+sched.c:/* get_DIR - Returns the Page Directory address for task 't' */
+sched.c:	return t->dir_pages_baseAddr;
+sched.c:/* get_PT - Returns the Page Table address for task 't' */
+sched.c:	return (page_table_entry *)(((unsigned int)(t->dir_pages_baseAddr->bits.pbase_addr))<<12);
+sched.c:			t->dir_pages_baseAddr = (page_table_entry*) &dir_pages[i];
+sched.c:			t->pos_in_dir_counter=i;
+sched.c:	pos = ((int)t-(int)task)/sizeof(union task_union);
+sched.c:	t->dir_pages_baseAddr = (page_table_entry*) &dir_pages[pos]; 
+sched.c:	idle_task->PID = 0;
+sched.c:	idle_task->semdestroyed = 0;
+sched.c:	idle_task->p_stats.remaining_ticks = 50;
+sched.c:	idle_task->kernel_esp = ((unsigned int *)idle_task)+KERNEL_STACK_SIZE-1;
+sched.c:	(*(idle_task->kernel_esp)) = (unsigned int)&cpu_idle;
+sched.c:	idle_task->kernel_esp = (idle_task->kernel_esp)-1;
+sched.c:	(*(idle_task->kernel_esp)) = 0;  //ebp=0 a l'stack
+sched.c:	task1->PID = 1;
+sched.c:	task1->p_stats.remaining_ticks = 50;
+sched.c:	task1->state = ST_RUN;
+sched.c:	task1->semdestroyed = 0;
+sched.c:	programbreak_table[task1->pos_in_dir_counter] = (unsigned char *)(PAG_LOG_INIT_HEAP << 12);
+sched.c:	set_cr3(task1->dir_pages_baseAddr);
+sched.c:	//ticks_process = task1->quantum;
+sched.c:	return t->quantum;
+sched.c:	t->quantum = new_quantum;
+sched.c:	//--current()->p_stats.remaining_ticks;
+sched.c:	--left_ticks;
+sched.c:		current()->p_stats.total_trans = current()->p_stats.total_trans + 1;
+sched.c:    if (t->state!=ST_RUN) list_del(&(t->list));
+sched.c:    if (dst_queue!=NULL) list_add_tail(&(t->list), dst_queue);
+sched.c:		t->state=ST_READY;
+sched.c:		t->state=ST_RUN;
+sched.c:		t->state=ST_BLOCKED; 
+sched.c:	current()->p_stats.system_ticks += get_ticks()- current()->p_stats.elapsed_total_ticks;
+sched.c:	current()->p_stats.elapsed_total_ticks = get_ticks();
+sched.c:	//next->p_stats.remaining_ticks = get_quantum(next);
+sched.c:	current()->p_stats.total_trans = current()->p_stats.total_trans + 1;
+sched.c:	//current()->p_stats.remaining_ticks = get_quantum(current()); //provar treurel
+sched.c:	current()->p_stats.ready_ticks += get_ticks() - current()->p_stats.elapsed_total_ticks;
+sched.c:	current()->p_stats.elapsed_total_ticks = get_ticks();
+Binary file sched.o matches
+suma.s:# 1 "<built-in>"
+suma.s:# 1 "<command-line>"
+suma.s:# 31 "<command-line>"
+suma.s:# 1 "/usr/include/stdc-predef.h" 1 3 4
+suma.s:# 32 "<command-line>" 2
+suma.s:mov -12(%ebp), %eax
+suma.s:add -8(%ebp), %eax
+suma.S:mov -12(%ebp), %eax
+suma.S:add -8(%ebp), %eax
+sys.c: * sys.c - Syscalls implementation
+sys.c:  if ((fd!=1 && permissions == ESCRIPTURA) || (fd != 0 && permissions == LECTURA)) return -9; /*EBADF*/
+sys.c:  if ((fd == 1 && permissions!=ESCRIPTURA) || (fd == 0 && permissions != LECTURA)) return -13; /*EACCES*/
+sys.c:	return -38; /*ENOSYS*/
+sys.c:  return current()->PID;
+sys.c:  int PID=-1;
+sys.c:  if (list_empty(&freequeue)) return -EAGAIN;
+sys.c:  //1->copiem l'union de la tasca del pare al fill
+sys.c:  //2->aloquem un directori (i tp) pel fill (es posa a la seva PCB també)
+sys.c:  //3->agafem les taules de pagines de pare i fill
+sys.c:  //4->inicialitzar les pagines del fill corresponents al codi, mapejantles igual que les del pare
+sys.c:  //5-> inicialitzar les pagines del fill corresponents al kernel, mapejantles igual que les del pare
+sys.c:  // heap: inizialitzar les pag del fill corresponents al heap, mapejar-les igual que les del pare
+sys.c:  volatile unsigned int programbreak_page = (unsigned int)(programbreak_table[current()->pos_in_dir_counter]-1) >> 12;
+sys.c:  //6->junt : alloc fisiques dades fill, ini entrades TP de dades fill, temp i copia de les del pare.
+sys.c:  int pag_heap = (int)programbreak_page - PAG_LOG_INIT_HEAP + 1;
+sys.c:      return -ENOMEM;
+sys.c:  child_task->PID = PID;
+sys.c:  unsigned int offset = ebp_father - (unsigned int)current();
+sys.c:  stackpointer = stackpointer - 1;
+sys.c:  child_task->kernel_esp = stackpointer;
+sys.c:  list_add_tail(&(child_task->list), &readyqueue);
+sys.c:  child_task->state = ST_READY;
+sys.c:  child_task->p_stats = newstats; 
+sys.c:  int PID=-1;
+sys.c:  if (list_empty(&freequeue)) return -EAGAIN;
+sys.c:  if ((int)function<L_USER_START || (int)function>= (PAG_LOG_INIT_DATA+NUM_PAG_DATA)*PAGE_SIZE) return -EINVAL;
+sys.c:  if ((int)stack < PAG_LOG_INIT_DATA*PAGE_SIZE || (int)stack >= (PAG_LOG_INIT_DATA+NUM_PAG_DATA)*PAGE_SIZE) return -EINVAL;
+sys.c:  dir_counter[current()->pos_in_dir_counter]++;
+sys.c:  thread_task->PID = PID;
+sys.c:  unsigned int offset = ebp_father - (unsigned int)current();
+sys.c:  stackpointer = stackpointer - 1;
+sys.c:  thread_task->kernel_esp = stackpointer;
+sys.c:  list_add_tail(&(thread_task->list), &readyqueue);
+sys.c:  thread_task->state = ST_READY;
+sys.c:  thread_task->p_stats = newstats;
+sys.c:  *(((unsigned int *)thread_task)+KERNEL_STACK_SIZE-5) = function;
+sys.c:  *(((unsigned int *)thread_task)+KERNEL_STACK_SIZE-2) = stack;
+sys.c:  if (n_sem<0 || n_sem>=20) return -EINVAL;
+sys.c:  if (sem_array[n_sem].owner_pid!=-1) return -EBUSY;
+sys.c:  sem_array[n_sem].owner_pid = current()->PID;
+sys.c:  if (n_sem<0 || n_sem>=20) return -EINVAL;
+sys.c:  if (sem_array[n_sem].owner_pid==-1) return -EINVAL;
+sys.c:    current()->state = ST_BLOCKED;
+sys.c:    list_add_tail(&(current()->list), &(sem_array[n_sem].blocked));
+sys.c:  }else --sem_array[n_sem].counter;
+sys.c:  if (current()->semdestroyed){
+sys.c:    current()->semdestroyed=0;
+sys.c:    return -EINVAL;
+sys.c:  if (n_sem<0 || n_sem>=20) return -EINVAL;
+sys.c:  if (sem_array[n_sem].owner_pid==-1) return -EINVAL;
+sys.c:    thread_task->state = ST_READY;
+sys.c:    list_add_tail(&(thread_task->list), &readyqueue);
+sys.c:  if (n_sem<0 || n_sem>=20 || sem_array[n_sem].owner_pid==-1) return -EINVAL;
+sys.c:  if (sem_array[n_sem].owner_pid != current()->PID) return -EPERM;
+sys.c:    thread_task->semdestroyed = 1;
+sys.c:    thread_task->state = ST_READY;
+sys.c:    list_add_tail(&(thread_task->list), &readyqueue);
+sys.c:  sem_array[n_sem].owner_pid=-1;
+sys.c:    if(sem_array[i].owner_pid == current()->PID) sys_sem_destroy(i);
+sys.c:  int pos = ((int)current()->dir_pages_baseAddr - (int)&dir_pages)>>12;
+sys.c:  --dir_counter[pos];
+sys.c:  current()->PID=-1;
+sys.c:  list_add_tail(&(current()->list), &freequeue);
+sys.c:  if (error_fd < 0) return -error_fd;
+sys.c:    if(size-i<size_block) curr_size=size-i;
+sys.c:    if (error_copy < 0) return -error_copy;
+sys.c:    int ret_wconsole = -1;
+sys.c:  current()->p_stats.user_ticks += get_ticks() - current()->p_stats.elapsed_total_ticks;
+sys.c:  current()->p_stats.elapsed_total_ticks = get_ticks();
+sys.c:  current()->p_stats.system_ticks += get_ticks() - current()->p_stats.elapsed_total_ticks;
+sys.c:  current()->p_stats.elapsed_total_ticks = get_ticks();
+sys.c:  if (error_fd < 0) return -error_fd;
+sys.c:  keyboard_readers_count[((int)current()-(int)task)/sizeof(union task_union)] = count;
+sys.c:      current()->state = ST_BLOCKED;
+sys.c:      list_add(&(current()->list), &keyboardqueue);
+sys.c:    unsigned char *endaddress = programbreak_table[current()->pos_in_dir_counter] + increment;
+sys.c:    if (increment>=0&&(((int)endaddress >> 12) < PAG_LOG_INIT_HEAP || ((int)endaddress >> 12) > TOTAL_PAGES)) return -ENOMEM;
+sys.c:    unsigned int ini_programbreak_page = (unsigned int)programbreak_table[current()->pos_in_dir_counter] >> 12; //agafem la pagina d'inici
+sys.c:      volatile unsigned int npages = new_programbreak_page - ini_programbreak_page; 
+sys.c:      if(!((int)programbreak_table[current()->pos_in_dir_counter] & 0x0FFF)) { //si l'inici del sbrk és un inici de pàgina
+sys.c:        tpentry--;// i per tant, desfem la suposicio de que ja estava reservada (el +1 anterior)
+sys.c:      if(!((int)endaddress & 0x0FFF)) --npages; //en cas de que el final conicideixi amb una pagina nova, no cal reservarla
+sys.c:          return -ENOMEM;
+sys.c:      volatile unsigned int npages = ini_programbreak_page - new_programbreak_page;
+sys.c:        free_frame(get_frame(current_tp,ini_programbreak_page - i));
+sys.c:        del_ss_pag(current_tp,ini_programbreak_page - i);
+sys.c:    char * last_programbreak = programbreak_table[current()->pos_in_dir_counter];
+sys.c:    if(belowheap) programbreak_table[current()->pos_in_dir_counter] = PAG_LOG_INIT_HEAP<<12;
+sys.c:    else programbreak_table[current()->pos_in_dir_counter] = endaddress;
+sys_call_table.s:# 1 "<built-in>"
+sys_call_table.s:# 1 "<command-line>"
+sys_call_table.s:# 31 "<command-line>"
+sys_call_table.s:# 1 "/usr/include/stdc-predef.h" 1 3 4
+sys_call_table.s:# 32 "<command-line>" 2
+sys_call_table.s:MAX_SYSCALL = (. - sys_call_table)/4
+sys_call_table.S:MAX_SYSCALL = (. - sys_call_table)/4
+Binary file sys.o matches
+Binary file system matches
+system.c: * system.c - 
+system.c: *   DS, ES, FS, GS <- DS
+system.c: *   SS:ESP <- DS:DATA_SEGMENT_SIZE
+system.c: * cld -> gcc2 wants DF (Direction Flag (eFlags.df))
+system.c:      esp = esp - 5*sizeof(DWord); /* To avoid overwriting task 1 */
+system.c:    task[i].task.PID=-1;
+system.c:      printnum((int)e->prev);
+system.c:      printnum((int)e->next);
+system.c:    sem_array[i].owner_pid = -1;
+system.lds: *  system.lds - Linker Script for ZeOS system image.
+Binary file system.o matches
+Binary file system.out matches
+Binary file user matches
+user.lds: *  ZeOS - jcosta septembre 2006
+user.lds: *  user.lds - Linker Script to create user memory image
+Binary file user.o matches
+Binary file user.out matches
+utils.c:    size -= 4;
+utils.c:    size --;
+utils.c:/* Copia de espacio de usuario a espacio de kernel, devuelve 0 si ok y -1 si error*/
+utils.c:    size -= 4;
+utils.c:    size --;
+utils.c:/* Copia de espacio de kernel a espacio de usuario, devuelve 0 si ok y -1 si error*/
+utils.c:    size -= 4;
+utils.c:    size --;
+utils.c: * - modifies the 64-bit dividend _in_place_
+utils.c: * - returns the 32-bit remainder
+Binary file utils.o matches
+Binary file zeos.bin matches
+Binary file Zeos.pdf matches

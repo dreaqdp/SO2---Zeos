@@ -94,7 +94,7 @@ void init_idle (void)
 }
 void writeMSR(int msr_id, int msr_value);
 
-extern char * programbreak_table[NR_TASKS];
+extern unsigned int programbreak_table[NR_TASKS];
 
 void init_task1(void)
 {
@@ -107,11 +107,11 @@ void init_task1(void)
 	task1->state = ST_RUN;
 	task1->semdestroyed = 0;
 	allocate_DIR(task1);
-	programbreak_table[task1->pos_in_dir_counter] = (unsigned char *)(PAG_LOG_INIT_HEAP << 12);
 	set_user_pages(task1);
 	tss.esp0 = (DWord)(((unsigned int *)task1)+KERNEL_STACK_SIZE);
 	writeMSR(0x175,(int)tss.esp0);
 	set_cr3(task1->dir_pages_baseAddr);
+	programbreak_table[task1->pos_in_dir_counter] = (unsigned int)(PAG_LOG_INIT_HEAP << 12);
 }
 
 extern unsigned int get_ticks();

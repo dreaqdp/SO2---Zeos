@@ -48,7 +48,7 @@ extern struct task_struct * task1;
 extern struct list_head readyqueue;
 extern union task_union *task;
 extern struct list_head freequeue; 
-char * programbreak_table[NR_TASKS];
+unsigned int programbreak_table[NR_TASKS];
  
 extern int global_PID;
 unsigned int get_esp();
@@ -369,11 +369,9 @@ void sys_read_keyboard(char * buffer, int count){
 
 void *sys_sbrk(int increment){
     
-
     volatile int x = free_pages();
 
-
-    unsigned char *endaddress = programbreak_table[current()->pos_in_dir_counter] + increment;
+    char *endaddress = (char *)programbreak_table[current()->pos_in_dir_counter] + increment;
     if (increment>=0&&(((int)endaddress >> 12) < PAG_LOG_INIT_HEAP || ((int)endaddress >> 12) > TOTAL_PAGES)) return -ENOMEM;
 
     page_table_entry * current_tp = get_PT(current());
@@ -424,7 +422,7 @@ void *sys_sbrk(int increment){
 
     }
     //hem entes que cal retornar el valor de  programbreak anterior a l'execució de sbrk.
-    char * last_programbreak = programbreak_table[current()->pos_in_dir_counter];
+    char * last_programbreak = (char *)programbreak_table[current()->pos_in_dir_counter];
     if(belowheap) programbreak_table[current()->pos_in_dir_counter] = PAG_LOG_INIT_HEAP<<12;
     else programbreak_table[current()->pos_in_dir_counter] = endaddress;
     return (void *)last_programbreak;

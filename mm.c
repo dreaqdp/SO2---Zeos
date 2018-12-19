@@ -248,6 +248,7 @@ int alloc_frame( void )
     return -1;
 }
 
+extern unsigned int programbreak_table[NR_TASKS];
 void free_user_pages( struct task_struct *task )
 {
   int pag;
@@ -257,7 +258,7 @@ void free_user_pages( struct task_struct *task )
     free_frame(process_PT[PAG_LOG_INIT_DATA+pag].bits.pbase_addr);
     process_PT[PAG_LOG_INIT_DATA+pag].entry = 0;
   }
-  for (pag=PAG_LOG_INIT_HEAP; pag<=(int)current()->programbreak >> 12; pag++){
+  for (pag=PAG_LOG_INIT_HEAP; pag<= (int)(programbreak_table[current()->pos_in_dir_counter]) >> 12; pag++){
     free_frame(process_PT[pag].bits.pbase_addr);
     process_PT[pag].entry = 0;
   }
