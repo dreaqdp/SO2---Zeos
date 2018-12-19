@@ -47,7 +47,7 @@ int allocate_DIR(struct task_struct *t)
 	for(int i=0; i<NR_TASKS; ++i){
 		if(!dir_counter[i]){
 			dir_counter[i]=1;
-			t->dir_pages_baseAddr = (page_table_entry*) &dir_pages[i]; 
+			t->dir_pages_baseAddr = (page_table_entry*) &dir_pages[i];
 			t->pos_in_dir_counter=i;
 			return 1;
 		}
@@ -93,18 +93,21 @@ void init_idle (void)
 
 }
 void writeMSR(int msr_id, int msr_value);
+
+extern char * programbreak_table[NR_TASKS];
+
 void init_task1(void)
 {
 	struct list_head *h = list_first(&freequeue);
 	list_del(h);
 	task1 = list_head_to_task_struct(h);
-	task1->programbreak = (unsigned char *)(PAG_LOG_INIT_HEAP << 12);
 	task1->PID = 1;
 	set_quantum(task1,50);
 	task1->p_stats.remaining_ticks = 50;
 	task1->state = ST_RUN;
 	task1->semdestroyed = 0;
 	allocate_DIR(task1);
+	programbreak_table[task1->pos_in_dir_counter] = (unsigned char *)(PAG_LOG_INIT_HEAP << 12);
 	set_user_pages(task1);
 	tss.esp0 = (DWord)(((unsigned int *)task1)+KERNEL_STACK_SIZE);
 	writeMSR(0x175,(int)tss.esp0);

@@ -48,6 +48,7 @@ extern struct task_struct * task1;
 extern struct list_head readyqueue;
 extern union task_union *task;
 extern struct list_head freequeue; 
+char * programbreak_table[NR_TASKS];
  
 extern int global_PID;
 unsigned int get_esp();
@@ -86,7 +87,7 @@ int sys_fork(){
   }
 
   // heap: inizialitzar les pag del fill corresponents al heap, mapejar-les igual que les del pare
-  volatile unsigned int programbreak_page = (unsigned int)(current()->programbreak-1) >> 12;
+  volatile unsigned int programbreak_page = (unsigned int)(programbreak_table[current()->pos_in_dir_counter]-1) >> 12;
   for (i = PAG_LOG_INIT_HEAP; i <= programbreak_page; i++) {
     set_ss_pag(child_tp, i, get_frame(father_tp, i));
   }
@@ -258,6 +259,7 @@ void sys_exit() {
   int pos = ((int)current()->dir_pages_baseAddr - (int)&dir_pages)>>12;
   --dir_counter[pos];
   if (!dir_counter[pos]){
+    // alliberar heap
     free_user_pages(current());
   }
   current()->PID=-1;
@@ -267,28 +269,28 @@ void sys_exit() {
 
 int size_block = 4;
 int sys_write(int fd, char * buffer, int size) {
-	
-	int error_fd = check_fd(fd, ESCRIPTURA);
-	if (error_fd < 0) return -error_fd;
-	if (buffer == NULL) return EFAULT;
-	if (size < 0) return EINVAL;
-	int i,curr_size=size_block;
-	for (i=0; i<size; i+=size_block){
-		char buffer_kernel[size_block];
-		if(size-i<size_block) curr_size=size-i;
-		int error_copy = copy_from_user(buffer+i, buffer_kernel, curr_size);
-		if (error_copy < 0) return -error_copy;
-		int ret_wconsole = -1;
-	    if (fd == 1) {
-			ret_wconsole = sys_write_console (buffer_kernel, curr_size);
-			if (ret_wconsole < 0) return ret_wconsole;
-		}
-	}
-	return 0;
+  
+  int error_fd = check_fd(fd, ESCRIPTURA);
+  if (error_fd < 0) return -error_fd;
+  if (buffer == NULL) return EFAULT;
+  if (size < 0) return EINVAL;
+  int i,curr_size=size_block;
+  for (i=0; i<size; i+=size_block){
+    char buffer_kernel[size_block];
+    if(size-i<size_block) curr_size=size-i;
+    int error_copy = copy_from_user(buffer+i, buffer_kernel, curr_size);
+    if (error_copy < 0) return -error_copy;
+    int ret_wconsole = -1;
+      if (fd == 1) {
+      ret_wconsole = sys_write_console (buffer_kernel, curr_size);
+      if (ret_wconsole < 0) return ret_wconsole;
+    }
+  }
+  return 0;
 }
 
 int sys_gettime () {
-	return zeos_ticks;
+  return zeos_ticks;
 }
 
 void enter_system(){
@@ -364,24 +366,25 @@ void sys_read_keyboard(char * buffer, int count){
 }
 
 
+
 void *sys_sbrk(int increment){
     
 
     volatile int x = free_pages();
 
 
-    unsigned char *endaddress = current()->programbreak + increment;
+    unsigned char *endaddress = programbreak_table[current()->pos_in_dir_counter] + increment;
     if (increment>=0&&(((int)endaddress >> 12) < PAG_LOG_INIT_HEAP || ((int)endaddress >> 12) > TOTAL_PAGES)) return -ENOMEM;
 
     page_table_entry * current_tp = get_PT(current());
-    unsigned int ini_programbreak_page = (unsigned int)current()->programbreak >> 12; //agafem la pagina d'inici
+    unsigned int ini_programbreak_page = (unsigned int)programbreak_table[current()->pos_in_dir_counter] >> 12; //agafem la pagina d'inici
     unsigned int new_programbreak_page = (unsigned int)endaddress >> 12; //agafem pagina final
     char belowheap = 0;
     if(increment>0){
       volatile unsigned int npages = new_programbreak_page - ini_programbreak_page; 
       int tpentry = ini_programbreak_page + 1; //per saber quina entrada de la TP actualitzar. En principi la pàgina
                                               //on es troba l'inici del sbrk ja esta reservada, per aixo el +1.
-      if(!((int)current()->programbreak & 0x0FFF)) { //si l'inici del sbrk és un inici de pàgina
+      if(!((int)programbreak_table[current()->pos_in_dir_counter] & 0x0FFF)) { //si l'inici del sbrk és un inici de pàgina
         ++npages; //haurem de reservar una pagina mes
         tpentry--;// i per tant, desfem la suposicio de que ja estava reservada (el +1 anterior)
       }
@@ -421,9 +424,9 @@ void *sys_sbrk(int increment){
 
     }
     //hem entes que cal retornar el valor de  programbreak anterior a l'execució de sbrk.
-    char * last_programbreak = current()->programbreak;
-    if(belowheap) current()->programbreak = PAG_LOG_INIT_HEAP<<12;
-    else current()->programbreak = endaddress;
+    char * last_programbreak = programbreak_table[current()->pos_in_dir_counter];
+    if(belowheap) programbreak_table[current()->pos_in_dir_counter] = PAG_LOG_INIT_HEAP<<12;
+    else programbreak_table[current()->pos_in_dir_counter] = endaddress;
     return (void *)last_programbreak;
 
 }
